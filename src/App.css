@@ -13,7 +13,7 @@ body {
 
 /* Sidebar Styles */
 .sidebar {
-  background-color: #81cfd8;
+  background-color: #b1dcc0;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -53,6 +53,21 @@ body {
 
 .btn:hover {
   background-color: #d0ebeb;
+}
+
+.toggle-btn {
+  background-color: #e4f5f4;
+  border: none;
+  margin-bottom: 15px;
+  padding: 10px;
+  text-align: left;
+  width: 50px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.toggle-btn:hover {
+  background-color: #c9e9e7; /* Cambio de color al pasar el cursor */
 }
 
 .sidebar.closed .btn {
