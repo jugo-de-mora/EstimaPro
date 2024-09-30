@@ -1,38 +1,150 @@
-.App {
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  background-color: #81cfd8;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: width 0.3s;
+}
+
+.sidebar.open {
+  width: 20%;
+}
+
+.sidebar.closed {
+  width: 60px;
+}
+
+.logo {
+  background-color: #4d8c90;
+  color: white;
+  padding: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+  border-radius: 5px;
+  width: 95%;
+
+}
+
+.btn {
+  background-color: #e4f5f4;
+  border: none;
+  margin-bottom: 15px;
+  padding: 10px;
+  text-align: left;
+  width: 100%;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #d0ebeb;
+}
+
+.sidebar.closed .btn {
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Main Content Styles */
+.main-content {
+  flex-grow: 1;
+  background-color: white;
+  padding: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Header */
+.header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  margin-bottom: 20px;
 }
 
-.App-link {
-  color: #61dafb;
+.search-bar {
+  width: 80%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #81cfd8;
+  border-radius: 50%;
+}
+
+/* Table Styles */
+.table {
+  background-color: #c2edce;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1fr 50px;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.table-header {
+  font-weight: bold;
+  background-color: #c2edce;
+  border-radius: 10px 10px 0 0;
+}
+
+.table-row:hover {
+  background-color: #b2dcbf;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdown-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f9f9f9;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 10px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
 }
