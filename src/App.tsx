@@ -3,9 +3,15 @@ import './App.css';
 
 function App() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
+  };
+
+  const toggleDropdown = () => {
+    console.log(isOpen);
+    setIsOpen(!isOpen);
   };
 
   return (
@@ -46,8 +52,9 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn">•••</button>
-              <div className="dropdown-content">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
@@ -60,8 +67,9 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn">•••</button>
-              <div className="dropdown-content">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
@@ -74,8 +82,10 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn">•••</button>
-              <div className="dropdown-content">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              {/* <button className="dropdown-btn">•••</button> */}
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
@@ -88,8 +98,10 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn">•••</button>
-              <div className="dropdown-content">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              {/* <button className="dropdown-btn">•••</button> */}
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
