@@ -28,7 +28,7 @@ function App() {
         </button>
         {isSidebarOpen && (
           <>
-            <button className="btn" onClick={openPopup}>+ Crear</button>
+            <button className="btn" >+ Crear</button>
             {/* <Link to="/Page-Creacion">  */}
               <button className="btn">Inicio</button>
             {/* </Link>  */}
@@ -116,7 +116,7 @@ function App() {
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
