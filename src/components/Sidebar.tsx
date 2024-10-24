@@ -36,7 +36,8 @@ const NavigateButton: React.FC<NavigateButtonProps> = ({
     if (onClick) {
       onClick(); // Ejecuta la función pasada como parámetro si existe
     }
-    navigate(to); // Navega a la ruta indicada sin refrescar la página
+    if (to !== "")
+      navigate(to); // Navega a la ruta indicada sin refrescar la página
   };
 
   return (
@@ -58,31 +59,6 @@ const NavigateButton: React.FC<NavigateButtonProps> = ({
 };
 
 const Sidebar: React.FC = () => {
-  // return (
-  //   <div style={{
-  //     width: '200px',
-  //     backgroundColor: '#a7d6a0',
-  //     padding: '20px',
-  //     position: 'fixed',
-  //     height: '100%',
-  //     display: 'flex',
-  //     flexDirection: 'column'
-  //   }}>
-  //     <nav>
-  //       <ul style={{ listStyleType: 'none', padding: 0 }}>
-  //         <li style={{ marginBottom: '10px' }}>
-  //           <Link to="/">Inicio</Link>
-  //         </li>
-  //         <li style={{ marginBottom: '10px' }}>
-  //           <Link to="/about">Acerca de</Link>
-  //         </li>
-  //         <li style={{ marginBottom: '10px' }}>
-  //           <Link to="/contact">Contacto</Link>
-  //         </li>
-  //       </ul>
-  //     </nav>
-  //   </div>
-  // );
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [openDropdowns, setOpenDropdowns] = useState([
     false,
@@ -150,12 +126,10 @@ const Sidebar: React.FC = () => {
         display: "flex",
         flexDirection: "column",
       }}
+      // className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}
     >
-      {/* <Button variant="contained" style={{ marginBottom: "10px", backgroundColor: "#4d8c90", color: "#fff" }} href="/">
-         <Link to="/">+ Crear</Link>
-         SEED E.M
-      </Button> */}
       <NavigateButton to="/about" label="SEED E.M" />
+      <NavigateButton to="" label={isSidebarOpen ? '←' : '→'} onClick={toggleSidebar} />
       <NavigateButton to="/" label="+ Crear" onClick={openPopup} />
       <NavigateButton to="/" label="Inicio" />
       <NavigateButton to="/contact" label="Reciente" />
