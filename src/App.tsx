@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import './App.css';
+// import { Routes, Route } from 'react-router-dom';
+// import MainPage from './App';
+// import PageCreacion from './Page-Creacion';
+// import { Link } from 'react-router-dom';
 
 function App() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -24,8 +28,10 @@ function App() {
         </button>
         {isSidebarOpen && (
           <>
-            <button className="btn">+ Crear</button>
-            <button className="btn">Inicio</button>
+            <button className="btn" onClick={openPopup}>+ Crear</button>
+            {/* <Link to="/Page-Creacion">  */}
+              <button className="btn">Inicio</button>
+            {/* </Link>  */}
             <button className="btn">Reciente</button>
           </>
         )}
@@ -45,6 +51,7 @@ function App() {
             <span>Nombre del cliente ↑</span>
             <span>Fecha de creación</span>
             <span>Creador</span>
+            <span>+</span>
           </div>
 
           <div className="table-row">
@@ -109,7 +116,7 @@ function App() {
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
