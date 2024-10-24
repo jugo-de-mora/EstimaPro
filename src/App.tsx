@@ -7,64 +7,15 @@ import './App.css';
 
 function App() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [openDropdowns, setOpenDropdowns] = useState([false, false, false, false]);
-  const [isPopupOpen, setIsPopupOpen] = useState(false); // Estado para el pop-up
-  const [dragOver, setDragOver] = useState(false);
-  const [file, setFile] = useState<File | null>(null); // Estado para el archivo arrastrado
-
-
-
-  // const App = () => {
-  //   return (
-  //     <Routes>
-  //       <Route path="/" element={<MainPage />} />
-  //       <Route path="/newpage" element={<PageCreacion />} />
-  //     </Routes>
-  //   );
-  // };
-
+  const [isOpen, setIsOpen] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
   };
 
-  const toggleDropdown = (index: number) => {
-    setOpenDropdowns(openDropdowns.map((isOpen, i) => (i === index ? !isOpen : isOpen)));
-  };
-
-  const openPopup = () => {
-    setIsPopupOpen(true);
-  };
-
-  const closePopup = () => {
-    setIsPopupOpen(false);
-    setFile(null); // Resetear archivo si se cancela
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    setFile(droppedFile);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
-    }
-  };
-
-  const handleAddFile = () => {
-    if (file) {
-      console.log('Archivo agregado:', file.name);
-      // Lógica para agregar el archivo
-      closePopup();
-    }
+  const toggleDropdown = () => {
+    console.log(isOpen);
+    setIsOpen(!isOpen);
   };
 
   return (
@@ -103,44 +54,65 @@ function App() {
             <span>+</span>
           </div>
 
-          {["Universidad El Bosque", "Universidad Los Andes", "Gimnasio Moderno", "Universidad Pedagógica"].map((cliente, index) => (
-            <div className="table-row" key={index}>
-              <span>{cliente}</span>
-              <span>6 abr 2024</span>
-              <span>William Vera</span>
-              <div className="dropdown">
-                <button className="dropdown-btn" onClick={() => toggleDropdown(index)}>•••</button>
-                <div className={`dropdown-content ${openDropdowns[index] ? 'open' : 'closed'}`}>
-                  <a href="#">Abrir en otra pestaña</a>
-                  <a href="#">Renombrar</a>
-                  <a href="#">Eliminar</a>
-                </div>
+          <div className="table-row">
+            <span>Universidad El Bosque</span>
+            <span>6 abr 2024</span>
+            <span>William Vera</span>
+            <div className="dropdown">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
+                <a href="#">Abrir en otra pestaña</a>
+                <a href="#">Renombrar</a>
+                <a href="#">Eliminar</a>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Popup para arrastrar archivos */}
-      {isPopupOpen && (
-        <div className="popup">
-          <div className="popup-content">
-            <h2>Arrastra un archivo aquí</h2>
-            <div
-              className={`dropzone ${dragOver ? 'drag-over' : ''}`}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              {file ? (
-                <p>Archivo seleccionado: {file.name}</p>
-              ) : (
-                <p>Arrastra y suelta un archivo aquí, o haz clic para seleccionarlo</p>
-              )}
-              <input type="file" onChange={handleFileChange} style={{ display: 'none' }} />
+          <div className="table-row">
+            <span>Universidad Los Andes</span>
+            <span>6 abr 2024</span>
+            <span>William Vera</span>
+            <div className="dropdown">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
+                <a href="#">Abrir en otra pestaña</a>
+                <a href="#">Renombrar</a>
+                <a href="#">Eliminar</a>
+              </div>
             </div>
-            <div className="popup-buttons">
-              <button className="popup-buttons" onClick={handleAddFile}>Agregar</button>
-              <button className="popup-buttons" onClick={closePopup}>Cancelar</button>
+          </div>
+
+          <div className="table-row">
+            <span>Gimnasio Moderno</span>
+            <span>6 abr 2024</span>
+            <span>William Vera</span>
+            <div className="dropdown">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              {/* <button className="dropdown-btn">•••</button> */}
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
+                <a href="#">Abrir en otra pestaña</a>
+                <a href="#">Renombrar</a>
+                <a href="#">Eliminar</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="table-row">
+            <span>Universidad Pedagógica</span>
+            <span>6 abr 2024</span>
+            <span>William Vera</span>
+            <div className="dropdown">
+              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              {/* <button className="dropdown-btn">•••</button> */}
+              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
+              {/* <div className="dropdown-content"> */}
+                <a href="#">Abrir en otra pestaña</a>
+                <a href="#">Renombrar</a>
+                <a href="#">Eliminar</a>
+              </div>
             </div>
           </div>
         </div>
