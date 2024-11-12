@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Container,
   Box,
   Button,
   Menu,
   MenuItem,
-  TextField,
   Table,
   TableBody,
   TableCell,
@@ -14,95 +12,95 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
 } from "@mui/material";
 import "./CreateEstimationPopup.css";
 
-// Definimos el tipo para las props que recibe el botón de navegación
+// Tipo para las props que recibe el botón de navegación
 interface NavigateButtonProps {
-  to: string; // La ruta a la que el botón debe navegar
-  label: string; // El texto del botón
-  onClick?: () => void; // El texto del botón
+  to: string;
+  label: string;
+  onClick?: () => void;
 }
 
-const NavigateButton: React.FC<NavigateButtonProps> = ({
-  to,
-  label,
-  onClick,
-}) => {
+const NavigateButton: React.FC<NavigateButtonProps> = ({ to, label, onClick }) => {
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const handleClick = () => {
-    if (onClick) {
-      onClick(); // Ejecuta la función pasada como parámetro si existe
-    }
-    navigate(to); // Navega a la ruta indicada sin refrescar la página
+  const handleButtonClick = () => {
+    if (onClick) onClick(); // Llama a onClick para abrir el popup
+    navigate(to); // Navega a la ruta indicada
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget); // Abre el menú al pasar el cursor sobre el sub-botón
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null); // Cierra el menú
+  };
+
+  const handleMenuItemClick = (path: string) => {
+    navigate(path);
+    setAnchorEl(null);
   };
 
   return (
-    <Button
-      variant="contained"
-      onClick={handleClick}
-      style={{
-        marginBottom: "10px",
-        backgroundColor: "#c2edce",
-        color: "#000",
-        padding: "10px",
-        margin: "5px",
-        cursor: "pointer",
-      }}
-    >
-      {label}
-    </Button>
+    <>
+      <Button
+        variant="contained"
+        onClick={handleButtonClick} // Llama a onClick y navega
+        style={{
+          marginBottom: "10px",
+          backgroundColor: "#c2edce",
+          color: "#000",
+          padding: "10px",
+          margin: "5px",
+          cursor: "pointer",
+        }}
+      >
+        {label}
+        {label === "+ Crear" && (
+          <Button
+            onMouseEnter={handleMenuOpen} // Despliega el menú al pasar el cursor sobre este botón adicional
+            style={{
+              marginLeft: "10px",
+              width: "1px",
+              backgroundColor: "#8cdb96",
+              color: "#000",
+              padding: "1px",
+              height: "15px"
+            }}
+          >
+            ▼
+          </Button>
+        )}
+      </Button>
+      {label === "+ Crear" && (
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          MenuListProps={{ onMouseLeave: handleMenuClose }}
+        >
+          <MenuItem onClick={() => handleMenuItemClick("/Subir")}>
+            Subir archivo
+          </MenuItem>
+          <MenuItem onClick={() => handleMenuItemClick("/nuevo")}>
+            Crear nuevo en blanco
+          </MenuItem>
+          <MenuItem onClick={() => handleMenuItemClick("/Generar")}>
+            Generar
+          </MenuItem>
+        </Menu>
+      )}
+    </>
   );
 };
 
 const Sidebar: React.FC = () => {
-  // return (
-  //   <div style={{
-  //     width: '200px',
-  //     backgroundColor: '#a7d6a0',
-  //     padding: '20px',
-  //     position: 'fixed',
-  //     height: '100%',
-  //     display: 'flex',
-  //     flexDirection: 'column'
-  //   }}>
-  //     <nav>
-  //       <ul style={{ listStyleType: 'none', padding: 0 }}>
-  //         <li style={{ marginBottom: '10px' }}>
-  //           <Link to="/">Inicio</Link>
-  //         </li>
-  //         <li style={{ marginBottom: '10px' }}>
-  //           <Link to="/about">Acerca de</Link>
-  //         </li>
-  //         <li style={{ marginBottom: '10px' }}>
-  //           <Link to="/contact">Contacto</Link>
-  //         </li>
-  //       </ul>
-  //     </nav>
-  //   </div>
-  // );
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [openDropdowns, setOpenDropdowns] = useState([
-    false,
-    false,
-    false,
-    false,
-  ]);
-  const [isPopupOpen, setIsPopupOpen] = useState(false); // Estado para el pop-up
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [file, setFile] = useState<File | null>(null); // Estado para el archivo arrastrado
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!isSidebarOpen);
-  };
-
-  const toggleDropdown = (index: number) => {
-    setOpenDropdowns(
-      openDropdowns.map((isOpen, i) => (i === index ? !isOpen : isOpen))
-    );
-  };
+  const [file, setFile] = useState<File | null>(null);
 
   const openPopup = () => {
     setIsPopupOpen(true);
@@ -110,7 +108,7 @@ const Sidebar: React.FC = () => {
 
   const closePopup = () => {
     setIsPopupOpen(false);
-    setFile(null); // Resetear archivo si se cancela
+    setFile(null); // Resetea archivo si se cancela
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -134,7 +132,6 @@ const Sidebar: React.FC = () => {
   const handleAddFile = () => {
     if (file) {
       console.log("Archivo agregado:", file.name);
-      // Lógica para agregar el archivo
       closePopup();
     }
   };
@@ -151,10 +148,6 @@ const Sidebar: React.FC = () => {
         flexDirection: "column",
       }}
     >
-      {/* <Button variant="contained" style={{ marginBottom: "10px", backgroundColor: "#4d8c90", color: "#fff" }} href="/">
-         <Link to="/">+ Crear</Link>
-         SEED E.M
-      </Button> */}
       <NavigateButton to="/about" label="SEED E.M" />
       <NavigateButton to="/" label="+ Crear" onClick={openPopup} />
       <NavigateButton to="/" label="Inicio" />
@@ -171,10 +164,7 @@ const Sidebar: React.FC = () => {
               {file ? (
                 <p>Archivo seleccionado: {file.name}</p>
               ) : (
-                <p>
-                  Arrastra y suelta un archivo aquí, o haz clic para
-                  seleccionarlo
-                </p>
+                <p>Arrastra y suelta un archivo aquí, o haz clic para seleccionarlo</p>
               )}
               <input
                 type="file"
@@ -183,12 +173,9 @@ const Sidebar: React.FC = () => {
               />
             </div>
             <div className="popup-buttons">
-              <button className="popup-buttons" onClick={handleAddFile}>
-                Agregar
-              </button>
-              <button className="popup-buttons" onClick={closePopup}>
-                Cancelar
-              </button>
+              <button onClick={handleAddFile}>Agregar</button>
+              <button onClick={closePopup}>Cancelar</button>
+              <button onClick={closePopup}>Desde Cero</button>
             </div>
           </div>
         </div>
