@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import SubirPage from './pages/SubirPage';
 
 function AppPrueba() {
   return (
@@ -22,6 +23,7 @@ function AppPrueba() {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/nuevo" element={<SubirPage />} />
           </Routes>
         </div>
       </div>
