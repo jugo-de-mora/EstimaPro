@@ -22,7 +22,11 @@ interface NavigateButtonProps {
   onClick?: () => void;
 }
 
-const NavigateButton: React.FC<NavigateButtonProps> = ({ to, label, onClick }) => {
+const NavigateButton: React.FC<NavigateButtonProps> = ({
+  to,
+  label,
+  onClick,
+}) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -68,7 +72,7 @@ const NavigateButton: React.FC<NavigateButtonProps> = ({ to, label, onClick }) =
               backgroundColor: "#8cdb96",
               color: "#000",
               padding: "1px",
-              height: "15px"
+              height: "15px",
             }}
           >
             ▼
@@ -108,6 +112,10 @@ const Sidebar: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false); // Estado para el pop-up
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!isSidebarOpen);
+  };
 
   const openPopup = () => {
     setIsPopupOpen(true);
@@ -157,10 +165,14 @@ const Sidebar: React.FC = () => {
       // className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}
     >
       <NavigateButton to="/about" label="SEED E.M" />
-      <NavigateButton to="" label={isSidebarOpen ? '←' : '→'} onClick={toggleSidebar} />
+      <NavigateButton
+        to=""
+        label={isSidebarOpen ? "←" : "→"}
+        onClick={toggleSidebar}
+      />
       <NavigateButton to="/" label="+ Crear" onClick={openPopup} />
       <NavigateButton to="/" label="Inicio" />
-      <NavigateButton to="/contact" label="Reciente" />
+      <NavigateButton to="/contact" label="Manual" />
       {isPopupOpen && (
         <div className="popup">
           <div className="popup-content">
@@ -173,7 +185,10 @@ const Sidebar: React.FC = () => {
               {file ? (
                 <p>Archivo seleccionado: {file.name}</p>
               ) : (
-                <p>Arrastra y suelta un archivo aquí, o haz clic para seleccionarlo</p>
+                <p>
+                  Arrastra y suelta un archivo aquí, o haz clic para
+                  seleccionarlo
+                </p>
               )}
               <input
                 type="file"
