@@ -68,6 +68,8 @@ function App() {
               </div>
             </div>
           </div>
+            </div>
+          </div>
 
           <div className="table-row">
             <span>Universidad Los Andes</span>
@@ -116,6 +118,7 @@ function App() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
