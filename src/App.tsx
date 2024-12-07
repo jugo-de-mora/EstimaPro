@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import './App.css';
+import React, { useState } from "react";
+import "./App.css";
 // import { Routes, Route } from 'react-router-dom';
 // import MainPage from './App';
 // import PageCreacion from './Page-Creacion';
@@ -21,16 +21,16 @@ function App() {
   return (
     <div className="container">
       {/* Sidebar */}
-      <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+      <div className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
         <div className="logo">SEED E.M</div>
         <button className="toggle-btn" onClick={toggleSidebar}>
-          {isSidebarOpen ? '←' : '→'}
+          {isSidebarOpen ? "←" : "→"}
         </button>
         {isSidebarOpen && (
           <>
             <button className="btn">+ Crear</button>
             {/* <Link to="/Page-Creacion">  */}
-              <button className="btn">Inicio</button>
+            <button className="btn">Inicio</button>
             {/* </Link>  */}
             <button className="btn">Reciente</button>
           </>
@@ -59,15 +59,15 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
-              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
-              {/* <div className="dropdown-content"> */}
+              <button className="dropdown-btn" onClick={toggleDropdown}>
+                •••
+              </button>
+              <div className={`dropdown-content ${isOpen ? "open" : "closed"}`}>
+                {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
               </div>
-            </div>
-          </div>
             </div>
           </div>
 
@@ -76,9 +76,11 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
-              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
-              {/* <div className="dropdown-content"> */}
+              <button className="dropdown-btn" onClick={toggleDropdown}>
+                •••
+              </button>
+              <div className={`dropdown-content ${isOpen ? "open" : "closed"}`}>
+                {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
@@ -91,10 +93,12 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              <button className="dropdown-btn" onClick={toggleDropdown}>
+                •••
+              </button>
               {/* <button className="dropdown-btn">•••</button> */}
-              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
-              {/* <div className="dropdown-content"> */}
+              <div className={`dropdown-content ${isOpen ? "open" : "closed"}`}>
+                {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
@@ -107,10 +111,12 @@ function App() {
             <span>6 abr 2024</span>
             <span>William Vera</span>
             <div className="dropdown">
-              <button className="dropdown-btn" onClick={toggleDropdown}>•••</button>
+              <button className="dropdown-btn" onClick={toggleDropdown}>
+                •••
+              </button>
               {/* <button className="dropdown-btn">•••</button> */}
-              <div className={`dropdown-content ${isOpen ? 'open' : 'closed'}`}>
-              {/* <div className="dropdown-content"> */}
+              <div className={`dropdown-content ${isOpen ? "open" : "closed"}`}>
+                {/* <div className="dropdown-content"> */}
                 <a href="#">Abrir en otra pestaña</a>
                 <a href="#">Renombrar</a>
                 <a href="#">Eliminar</a>
@@ -118,7 +124,6 @@ function App() {
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
