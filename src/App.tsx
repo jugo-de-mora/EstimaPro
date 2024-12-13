@@ -22,7 +22,7 @@ function App() {
     <div className="container">
       {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
-        <div className="logo">SEED E.M</div>
+        <div className="logo">SED E.M</div>
         <button className="toggle-btn" onClick={toggleSidebar}>
           {isSidebarOpen ? "←" : "→"}
         </button>
