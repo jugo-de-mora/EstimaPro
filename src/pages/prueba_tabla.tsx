@@ -21,7 +21,7 @@ const SubirPage: React.FC = () => {
     <div className="table-container">
       <table className="custom-table">
         <tbody>
-          {[1, 2, 3].map((row, index) => (
+          {[1, 2, 3, 4].map((row, index) => (
             <tr key={index} className="table-row">
               <td>
                 <div
