@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Link } from "react-router-dom";
 import "./CreateEstimationPopup.css";
+import axios from "axios";
 
 const SidebarSecondOption = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false); // Estado para el pop-up
@@ -128,7 +129,7 @@ const SidebarSecondOption = () => {
         {/* <MenuItem component={<Link to="/about" />}> SEED E.M</MenuItem> */}
         <MenuItem onClick={openPopup}>+ Crear</MenuItem>
         <MenuItem component={<Link to="/" />}> Inicio</MenuItem>
-        <MenuItem component={<Link to="/contact" />}> Manual</MenuItem>
+        <MenuItem component={<Link to="/nuevo" />}> Manual</MenuItem>
       </Menu>
       {isPopupOpen && (
         <div className="popup">

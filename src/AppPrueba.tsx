@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import SubirPage from './pages/SubirPage';
+// import SubirPage from './pages/prueba_tabla';
 
 function AppPrueba() {
   return (

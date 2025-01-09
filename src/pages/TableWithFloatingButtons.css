@@ -1,0 +1,57 @@
+.table-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  
+  .custom-table {
+    border-collapse: collapse;
+    width: 300px;
+  }
+  
+  .custom-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    position: relative;
+  }
+  
+  .input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .cell-input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .cell-input:focus {
+    outline: 2px solid #007bff;
+  }
+  
+  .floating-buttons {
+    position: absolute;
+    right: -130px; /* Espaciado para los botones */
+    display: flex;
+    gap: 5px; /* Espaciado entre los botones */
+  }
+  
+  .floating-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .floating-button:hover {
+    background-color: #0056b3;
+  }
+  
+  
