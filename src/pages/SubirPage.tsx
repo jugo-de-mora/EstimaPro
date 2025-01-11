@@ -9,9 +9,15 @@ import {
   Button,
 } from "@mui/material";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 
 const SubirPage: React.FC = () => {
 
+  const location = useLocation();
+  const csvData = location.state?.csvData || "No hay datos recibidos";
+  console.log(csvData)
+  
+  // ---- Es la primera fila de la tabla----
   const initialHeaders = [
     "",
     "Categoría",
@@ -42,6 +48,8 @@ const SubirPage: React.FC = () => {
     "100px",
   ];
 
+
+
   const [data, setData] = useState<string[][]>(() => {
     const savedData = localStorage.getItem("tableData");
     if (savedData) {
@@ -60,6 +68,58 @@ const SubirPage: React.FC = () => {
   
 
   const [hoveredCell, setHoveredCell] = useState<number[] | null>(null);
+
+  function parseCSV(csvString: string): string[][] {
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = '';
+    let insideQuotes = false;
+
+    for (let i = 0; i < csvString.length; i++) {
+        const char = csvString[i];
+        const nextChar = csvString[i + 1];
+
+        if (char === '"') {
+            // Si encontramos una comilla, verificar si estamos dentro de comillas
+            if (insideQuotes && nextChar === '"') {
+                // Si es una comilla escapada, añadirla al campo actual
+                currentField += '"';
+                i++; // Saltar la siguiente comilla
+            } else {
+                // Cambiar el estado de dentro de comillas
+                insideQuotes = !insideQuotes;
+            }
+        } else if (char === ',' && !insideQuotes) {
+            // Si encontramos una coma fuera de comillas, es un nuevo campo
+            currentRow.push(currentField);
+            currentField = '';
+        } else if (char === '\n' && !insideQuotes) {
+            // Si encontramos un salto de línea fuera de comillas, es una nueva fila
+            currentRow.push(currentField);
+            rows.push(currentRow);
+            currentRow = [];
+            currentField = '';
+        } else {
+            // Cualquier otro carácter, agregar al campo actual
+            currentField += char;
+        }
+    }
+
+    // Agregar la última fila si queda algo pendiente
+    if (currentField !== '' || currentRow.length > 0) {
+        currentRow.push(currentField);
+        rows.push(currentRow);
+    }
+
+    return rows;
+}
+
+  useEffect(() => {
+    if (csvData && csvData !== "No hay datos recibidos") {
+        setData(parseCSV(csvData));
+    }
+  }, [csvData]);  // Solo actualiza el estado si `csvData` cambia
+  
 
   useEffect(() => {
     localStorage.setItem("tableData", JSON.stringify(data));
@@ -123,6 +183,7 @@ const SubirPage: React.FC = () => {
     }
   };
 
+
   const crearEstimacion = async () => {
     try {
       const url = "http://localhost:4000/api/crear_estimacion/";
@@ -150,6 +211,7 @@ const SubirPage: React.FC = () => {
     }
   };
   
+  // -------Agrega columnas a la tabla-----
   return (
     <div onBlur={(event) => handleMouseLeave(event)}>
       <button onClick={addColumn}>+ Columna</button>

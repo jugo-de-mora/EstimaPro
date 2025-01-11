@@ -4,7 +4,8 @@ import Sidebar from './components/Sidebar';
 import SidebarSecondOption from './components/SidebarSecondOption';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
+import ManualPage from './pages/ContactPage';
+//import ManualPage from './pages/ManualPage';
 import SubirPage from './pages/SubirPage';
 // import SubirPage from './pages/prueba_tabla';
 
@@ -24,7 +25,7 @@ function AppPrueba() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/manual" element={<ManualPage />} />
             <Route path="/nuevo" element={<SubirPage />} />
           </Routes>
         </div>
