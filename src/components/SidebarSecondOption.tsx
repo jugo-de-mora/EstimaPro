@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Link } from "react-router-dom";
 import "./CreateEstimationPopup.css";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
+//------------------------------------------------ SideBar Blanca -----------------------------------------------------\\
 
 const SidebarSecondOption = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false); // Estado para el pop-up
@@ -11,6 +14,7 @@ const SidebarSecondOption = () => {
   const [file, setFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [csvContent, setCsvContent] = useState<string>("");
+  const navigate = useNavigate(); // Hook para la redirección
 
   const openPopup = () => {
     setIsPopupOpen(true);
@@ -53,6 +57,8 @@ const SidebarSecondOption = () => {
         const text = event.target?.result as string;
         setCsvContent(text);
         console.log("Contenido del archivo CSV:", text); // Mostrar contenido en consola
+        navigate("/nuevo", { state: { csvData: text } });
+
       };
 
       reader.onerror = () => {
@@ -129,7 +135,7 @@ const SidebarSecondOption = () => {
         {/* <MenuItem component={<Link to="/about" />}> SEED E.M</MenuItem> */}
         <MenuItem onClick={openPopup}>+ Crear</MenuItem>
         <MenuItem component={<Link to="/" />}> Inicio</MenuItem>
-        <MenuItem component={<Link to="/nuevo" />}> Manual</MenuItem>
+        <MenuItem component={<Link to="/nuevo" />}> Desde cero</MenuItem>
       </Menu>
       {isPopupOpen && (
         <div className="popup">
