@@ -1,6 +1,8 @@
 import React from 'react';
 import './SubirPage.css'; // Asegúrate de crear este archivo para los estilos.
 
+
+// ------------------------------------PAGINA MANUAL ----------------------------------------
 const ManualPage: React.FC = () => {
   return (
     <div style={{ padding: '20px' }}>

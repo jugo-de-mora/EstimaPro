@@ -15,6 +15,9 @@ import {
 } from "@mui/material";
 import "./CreateEstimationPopup.css";
 
+//------------------------------------------------ SideBar Verde -----------------------------------------------------\\
+
+
 // Tipo para las props que recibe el botón de navegación
 interface NavigateButtonProps {
   to: string;
@@ -172,7 +175,7 @@ const Sidebar: React.FC = () => {
       />
       <NavigateButton to="/" label="+ Crear" onClick={openPopup} />
       <NavigateButton to="/" label="Inicio" />
-      <NavigateButton to="/contact" label="Manual" />
+      <NavigateButton to="/manual" label="Manual" />
       {isPopupOpen && (
         <div className="popup">
           <div className="popup-content">
