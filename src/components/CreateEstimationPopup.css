@@ -13,7 +13,7 @@ body {
 
 /* Sidebar Styles */
 .sidebar {
-  background-color: #b1dcc0;
+  background-color: #CFEAD8 !important;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -23,10 +23,12 @@ body {
 
 .sidebar.open {
   width: 10%;
+  background-color: #CFEAD8 !important;
 }
 
 .sidebar.closed {
   width: 60px;
+  background-color: #CFEAD8 !important;
 }
 
 .logo {

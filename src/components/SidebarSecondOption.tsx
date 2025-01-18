@@ -57,7 +57,7 @@ const SidebarSecondOption = () => {
         const text = event.target?.result as string;
         setCsvContent(text);
         console.log("Contenido del archivo CSV:", text); // Mostrar contenido en consola
-        navigate("/nuevo", { state: { csvData: text } });
+        navigate("/crear", { state: { csvData: text } }); 
 
       };
 
@@ -85,7 +85,7 @@ const SidebarSecondOption = () => {
   };
 
   return (
-    <Sidebar collapsed={isCollapsed}>
+    <Sidebar collapsed={isCollapsed} style={{ backgroundColor: '#CFEAD8' }}>
       <button
         onClick={toggleSidebar}
         style={{
@@ -95,7 +95,7 @@ const SidebarSecondOption = () => {
           position: "absolute",
           top: "10px",
           right: "5px",
-          backgroundColor: "transparent",
+          backgroundColor: '#CFEAD8',
           color: "#696969",
           border: "none",
           borderRadius: "50%",
@@ -126,16 +126,17 @@ const SidebarSecondOption = () => {
             // the active class will be added automatically by react router
             // so we can use it to style the active menu item
             [`&.active`]: {
-              backgroundColor: "#13395e",
-              color: "#b6c8d9",
+              backgroundColor: "#A7DCC6",
+              color: '#b6c8d9',
             },
           },
         }}
       >
         {/* <MenuItem component={<Link to="/about" />}> SEED E.M</MenuItem> */}
-        <MenuItem onClick={openPopup}>+ Crear</MenuItem>
+        <MenuItem onClick={openPopup}>+ Importar</MenuItem>
         <MenuItem component={<Link to="/" />}> Inicio</MenuItem>
-        <MenuItem component={<Link to="/nuevo" />}> Desde cero</MenuItem>
+        <MenuItem component={<Link to="/seleccionar" />}> Nuevo</MenuItem>
+        <MenuItem component={<Link to="/crear" />}> Crear</MenuItem>
       </Menu>
       {isPopupOpen && (
         <div className="popup">
