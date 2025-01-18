@@ -12,8 +12,14 @@ import axios from "axios";
 import { useLocation } from "react-router-dom";
 
 const SubirPage: React.FC = () => {
+
+  const [hoveredCell, setHoveredCell] = useState<number[] | null>(null);
+
+
+
   const location = useLocation();
   const csvData = location.state?.csvData || "No hay datos recibidos";
+  console.log(csvData)
 
   // ---- Es la primera fila de la tabla----
   const initialHeaders = [
@@ -62,7 +68,8 @@ const SubirPage: React.FC = () => {
     ];
   });
 
-  const [hoveredCell, setHoveredCell] = useState<number[] | null>(null);
+  const [rowHeights, setRowHeights] = useState<number[]>(() => data.map(() => 30));
+
 
   function parseCSV(csvString: string): string[][] {
     const rows: string[][] = [];
@@ -84,16 +91,16 @@ const SubirPage: React.FC = () => {
           // Cambiar el estado de dentro de comillas
           insideQuotes = !insideQuotes;
         }
-      } else if (char === "," && !insideQuotes) {
+      } else if (char === ',' && !insideQuotes) {
         // Si encontramos una coma fuera de comillas, es un nuevo campo
         currentRow.push(currentField);
-        currentField = "";
-      } else if (char === "\n" && !insideQuotes) {
+        currentField = '';
+      } else if (char === '\n' && !insideQuotes) {
         // Si encontramos un salto de línea fuera de comillas, es una nueva fila
         currentRow.push(currentField);
         rows.push(currentRow);
         currentRow = [];
-        currentField = "";
+        currentField = '';
       } else {
         // Cualquier otro carácter, agregar al campo actual
         currentField += char;
@@ -101,7 +108,7 @@ const SubirPage: React.FC = () => {
     }
 
     // Agregar la última fila si queda algo pendiente
-    if (currentField !== "" || currentRow.length > 0) {
+    if (currentField !== '' || currentRow.length > 0) {
       currentRow.push(currentField);
       rows.push(currentRow);
     }
@@ -111,9 +118,36 @@ const SubirPage: React.FC = () => {
 
   useEffect(() => {
     if (csvData && csvData !== "No hay datos recibidos") {
-      setData(parseCSV(csvData));
+      const parsedData = parseCSV(csvData);
+      setData(parsedData);
+
+      // Calcular alturas iniciales para cada fila
+      const calculateRowHeights = () => {
+        const tempContainer = document.createElement("div");
+        tempContainer.style.position = "absolute";
+        tempContainer.style.visibility = "hidden";
+        tempContainer.style.whiteSpace = "pre-wrap"; // Simula el texto envuelto
+        tempContainer.style.width = "100px"; // Ajustar al ancho típico de celdas
+        document.body.appendChild(tempContainer);
+
+        const heights = parsedData.map((row) => {
+          let maxHeight = 30; // Altura mínima
+          row.forEach((cell) => {
+            tempContainer.textContent = cell; // Añade contenido al contenedor temporal
+            tempContainer.style.height = "auto"; // Permite medir el alto dinámicamente
+            maxHeight = Math.max(maxHeight, tempContainer.scrollHeight);
+          });
+          return Math.min(400, maxHeight); // Limita a 200px
+        });
+
+        document.body.removeChild(tempContainer); // Eliminar contenedor temporal
+        return heights;
+      };
+
+      setRowHeights(calculateRowHeights());
     }
-  }, [csvData]); // Solo actualiza el estado si `csvData` cambia
+  }, [csvData]);  // Solo actualiza el estado si `csvData` cambia
+
 
   useEffect(() => {
     localStorage.setItem("tableData", JSON.stringify(data));
@@ -132,6 +166,8 @@ const SubirPage: React.FC = () => {
       setData((prevData) => prevData.map((row) => row.slice(0, -1)));
     }
   };
+
+
 
   const removeRow = (rowIndex: number, columnIndex: number) => {
     if (data.length > 2) {
@@ -232,6 +268,15 @@ const SubirPage: React.FC = () => {
     }
   };
 
+  // con esto se modifica el tamaño maximo vertical de cada celda
+  const adjustRowHeight = (rowIndex: number, newHeight: number) => {
+    setRowHeights((prevHeights) => {
+      const updatedHeights = [...prevHeights];
+      updatedHeights[rowIndex] = Math.min(400, Math.max(updatedHeights[rowIndex], newHeight));
+      return updatedHeights;
+    });
+  };
+
   // -------Agrega columnas a la tabla-----
   return (
     <div onBlur={(event) => handleMouseLeave(event)}>
@@ -241,12 +286,12 @@ const SubirPage: React.FC = () => {
         component={Paper}
         style={{
           backgroundColor: "#c2edce",
-          width: "95%",
+          width: "100%",
           height: "100%",
           overflowX: data[0].length > 12 ? "auto" : "hidden",
           overflowY: "auto",
           position: "relative", // Para el posicionamiento de los botones flotantes
-          maxWidth: "calc(100px * 12)", // Ancho máximo basado en 12 columnas predeterminadas
+          maxWidth: "1560px", // Ancho máximo basado en 12 columnas predeterminadas
           whiteSpace: "nowrap", // Mantiene las columnas en una sola línea para el scroll horizontal
         }}
       >
@@ -262,7 +307,7 @@ const SubirPage: React.FC = () => {
         >
           <TableBody>
             {data.map((row, rowIndex) => (
-              <TableRow key={rowIndex}>
+              <TableRow key={rowIndex} style={{ height: `${rowHeights[rowIndex]}px` }}>
                 {row.map((cell, colIndex) => (
                   <TableCell
                     key={colIndex}
@@ -270,6 +315,7 @@ const SubirPage: React.FC = () => {
                       border: "none",
                       padding: "5px",
                       width: ancho[colIndex] || "100px",
+                      height: `${rowHeights[rowIndex]}px`,
                     }}
                     onFocus={() => handleMouseEnter(rowIndex, colIndex)}
                   >
@@ -278,12 +324,20 @@ const SubirPage: React.FC = () => {
                       onChange={(e) =>
                         handleCellChange(rowIndex, colIndex, e.target.value)
                       }
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = "auto"; // Resetear altura para calcular dinámicamente
+                        target.style.height = `${Math.min(target.scrollHeight, 50)}px`; // Ajustar hasta un máximo de 200px
+                        adjustRowHeight(rowIndex, Math.min(target.scrollHeight, 50)); // Sincronizar altura de la fila
+                      }}
                       style={{
-                        border: "none", // remueve la barra horizontal
+                        border: "none",
                         width: "100%",
-                        resize: "none",
-                        overflowWrap: "break-word",
-                        minHeight: "30px",
+                        resize: "none", // Desactivar cambio de tamaño manual
+                        overflow: "auto", // Activar scrollbar si es necesario
+                        
+                        maxHeight: "50px", // Altura máxima de 200px
+                        minHeight: `${rowHeights[rowIndex]}px`, // Altura sincronizada
                       }}
                       disabled={rowIndex === 0 && colIndex < 12}
                     />
