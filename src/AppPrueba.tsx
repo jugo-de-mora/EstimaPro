@@ -7,7 +7,8 @@ import AboutPage from './pages/AboutPage';
 import ManualPage from './pages/ContactPage';
 //import ManualPage from './pages/ManualPage';
 import SubirPage from './pages/SubirPage';
-// import SubirPage from './pages/prueba_tabla';
+import SelectionPage from './pages/SelectionPage';
+
 
 function AppPrueba() {
   return (
@@ -26,7 +27,8 @@ function AppPrueba() {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/manual" element={<ManualPage />} />
-            <Route path="/nuevo" element={<SubirPage />} />
+            <Route path="/seleccionar" element={<SelectionPage />} />
+            <Route path="/crear" element={<SubirPage />} />
           </Routes>
         </div>
       </div>
