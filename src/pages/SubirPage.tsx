@@ -140,7 +140,7 @@ const SubirPage: React.FC = () => {
             tempContainer.style.height = "auto"; // Permite medir el alto dinámicamente
             maxHeight = Math.max(maxHeight, tempContainer.scrollHeight);
           });
-          return Math.min(400, maxHeight); // Limita a 200px
+          return Math.min(300, maxHeight); // px por Defauld
         });
 
         document.body.removeChild(tempContainer); // Eliminar contenedor temporal
@@ -245,10 +245,34 @@ const SubirPage: React.FC = () => {
   };
 
   // con esto se modifica el tamaño maximo vertical de cada celda
-  const adjustRowHeight = (rowIndex: number, newHeight: number) => {
+  const adjustRowHeight = (rowIndex: number, colIndex: number, cellHeight: number) => {
     setRowHeights((prevHeights) => {
+      // Create a shallow copy of the heights array
       const updatedHeights = [...prevHeights];
-      updatedHeights[rowIndex] = Math.min(400, Math.max(updatedHeights[rowIndex], newHeight));
+
+      // Update the height of the specific cell
+      const rowCells = data[rowIndex].map((_, colIdx) => {
+        const cellElement = document.querySelector(
+          `tr:nth-child(${rowIndex + 1}) td:nth-child(${colIdx + 1}) textarea`
+        ) as HTMLTextAreaElement;
+       //console.log(cellElement.scrollHeight,"asdas3")
+       //console.log(rowIndex,"asdas4")
+        return cellElement ? Math.min(cellElement.scrollHeight, 300) : 30; // Limit to 300px
+      });
+
+      // Calculate the maximum height for the row
+      const maxRowHeight = Math.max(...rowCells, cellHeight);
+      if (maxRowHeight <= cellHeight) {
+        // Si el contenido cabe dentro del límite, ajusta la altura
+
+        updatedHeights[rowIndex] = maxRowHeight;
+      } else {
+        // Si el contenido excede el límite, fija la altura al máximo
+        updatedHeights[rowIndex] = cellHeight;
+      }
+      // Update the height of the row
+      
+
       return updatedHeights;
     });
   };
@@ -302,18 +326,31 @@ const SubirPage: React.FC = () => {
                       }
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
-                        target.style.height = "auto"; // Resetear altura para calcular dinámicamente
-                        target.style.height = `${Math.min(target.scrollHeight, 50)}px`; // Ajustar hasta un máximo de 200px
-                        adjustRowHeight(rowIndex, Math.min(target.scrollHeight, 50)); // Sincronizar altura de la fila
+                        target.style.height = "auto";
+
+                        const cellHeight = Math.min(target.scrollHeight, 100); // Limit to 300px
+                        target.style.height = `${cellHeight}px`;
+                      //---------------------------------------------------------------------\\
+                        const maxHeight = 500;
+                        console.log('scrollHeight:', target.scrollHeight);
+                        if (target.scrollHeight <= maxHeight) {
+                          target.style.height = `${target.scrollHeight}px`;
+                        } else {
+                          // Si supera el máximo, limitamos la altura y permitimos el scrollbar
+                          target.style.height = `${maxHeight}px`;
+                        }
+                    
+                        // Imprimimos el scrollHeight en la consola
+                       
+                        adjustRowHeight(rowIndex, colIndex, cellHeight);
                       }}
                       style={{
                         border: "none",
                         width: "100%",
-                        resize: "none", // Desactivar cambio de tamaño manual
-                        overflow: "auto", // Activar scrollbar si es necesario
-                        
-                        maxHeight: "50px", // Altura máxima de 200px
-                        minHeight: `${rowHeights[rowIndex]}px`, // Altura sincronizada
+                        resize: "none", // Disable manual resizing
+                        overflowY: "auto", // Enable vertical scrolling
+                        maxHeight: "600px", // Set maximum height
+                        minHeight: `${rowHeights[rowIndex]}px`, // Sync with row height
                       }}
                       disabled={rowIndex === 0 && colIndex < 12}
                     />
