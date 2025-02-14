@@ -1,26 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
 import SidebarSecondOption from './components/SidebarSecondOption';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
-import ManualPage from './pages/ContactPage';
-//import ManualPage from './pages/ManualPage';
+import ManualPage from './pages/ManualPage';
 import SubirPage from './pages/SubirPage';
 import SelectionPage from './pages/SelectionPage';
 
 
 function AppPrueba() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <Router>
       <div style={{ display: 'flex', height: '100vh' }}>
         {/* Barra lateral fija */}
-        <SidebarSecondOption />
+        <SidebarSecondOption isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
         {/* Contenido que se actualiza basado en las rutas */}
         <div style={{
           flexGrow: 1, 
-          marginLeft: '30px',  /* Ajusta esto al ancho de tu barra lateral */
+          marginLeft: isCollapsed ? '110px' : '280px',
           padding: '20px'
         }}>
           <Routes>

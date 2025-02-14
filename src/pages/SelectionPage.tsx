@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Accordion, Card, Form, Button as ButtonB } from "react-bootstrap";
 import { fetchNeo4jData } from "../services/neo4jService";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface Client {
   name: string;
@@ -12,19 +13,21 @@ interface Client {
 }
 
 interface Neo4jNode {
+  nodos: [any];
   [key: string]: any;
 }
 
 function HomePage() {
-  const [data, setData] = useState<Neo4jNode[]>([]);
+  const [data, setData] = useState<Neo4jNode[] | null>();
   const [loading, setLoading] = useState<boolean>(true);
+  const navigate = useNavigate(); // Hook para la redirección
 
   useEffect(() => {
     const getData = async () => {
       try {
         const neo4jData = await fetchNeo4jData();
-        console.log("Neo4j data:", neo4jData);
         setData(neo4jData);
+        console.log("Neo4j data:", neo4jData);
       } catch (error) {
         console.error("Error loading Neo4j data:", error);
       } finally {
@@ -35,9 +38,16 @@ function HomePage() {
     getData();
   }, []);
 
-//   if (loading) {
-//     return <p>Loading...</p>;
-//   }
+  // useEffect(() => {
+  //   if (data) {
+  //     console.log("Neo4j data:", data);
+  //     console.log("Categoría:", data[0].categoria);
+  //   }
+  // }, [data]);
+
+  //   if (loading) {
+  //     return <p>Loading...</p>;
+  //   }
 
   const [selectedCards, setSelectedCards] = useState<{
     [key: string]: boolean;
@@ -51,10 +61,21 @@ function HomePage() {
   };
 
   const handleAccept = () => {
-    const selectedItems = Object.keys(selectedCards).filter(
+    const selectedItems: string[] = Object.keys(selectedCards).filter(
       (key) => selectedCards[key]
     );
-    alert(`Has seleccionado: ${selectedItems.join(", ")}`);
+    let jsonData: string[] = [];
+
+    if (selectedItems.length > 0) {
+      selectedItems.forEach((item) => {
+        if (data) {
+          jsonData.push(JSON.stringify(data[parseInt(item[0])].nodos[parseInt(item[2])]));
+        }
+        console.log("Selected item:", jsonData);
+      })
+    }
+
+    navigate("/crear", { state: { jsonData: jsonData } }); 
   };
 
   // Tema de colores
@@ -67,6 +88,8 @@ function HomePage() {
     cardBackground: "#CFEAD8", // Verde claro
   };
 
+
+
   return (
     <Box
       sx={{
@@ -76,6 +99,7 @@ function HomePage() {
       }}
     >
       <Box sx={{ padding: "20px", flexGrow: 1 }}>
+        <h2 style={{fontWeight: "600", marginBottom: "25px"}}>Historias predefinidas</h2>
         {/* Placeholder de buscar */}
         <TextField
           label="Buscar"
@@ -90,16 +114,23 @@ function HomePage() {
         <div>
           <Accordion defaultActiveKey="0">
             {/* Sección 1 */}
-            <Accordion.Item eventKey="0">
+            {data?.map((item, index_section) => (
+            <Accordion.Item eventKey={index_section.toString()}>
               <Accordion.Header
                 style={{ backgroundColor: themeStyles.primary }}
               >
-                Sección 1
+                {data && data?.length > 0 ? (
+                  <p style={{ marginBottom: "0px" }}>{item.categoria}</p>
+                ) : (
+                  <p style={{ marginBottom: "0px" }}>
+                    No hay datos disponibles
+                  </p>
+                )}
               </Accordion.Header>
               <Accordion.Body>
-                {[1, 2, 3].map((index) => (
+                {item.nodos?.map((item_nodo, index_nodo) => (
                   <Card
-                    key={`sec1-${index}`}
+                    key={`sec${index_section}-${index_nodo}`}
                     className="mb-3"
                     style={{
                       backgroundColor: themeStyles.cardBackground,
@@ -107,103 +138,50 @@ function HomePage() {
                     }}
                   >
                     <Card.Body>
-                      <Card.Title style={{ color: themeStyles.text }}>
-                        Card {index} - Sección 1
-                      </Card.Title>
-                      <Card.Text style={{ color: themeStyles.text }}>
-                        Contenido de la tarjeta {index}.
-                      </Card.Text>
                       <Form.Check
                         type="checkbox"
-                        label="Seleccionar"
-                        checked={selectedCards[`sec1-${index}`] || false}
-                        onChange={() => handleCheckboxChange(`sec1-${index}`)}
+                        checked={selectedCards[`${index_section}-${index_nodo}`] || false}
+                        onChange={() => handleCheckboxChange(`${index_section}-${index_nodo}`)}
+                        style={{
+                          display: "inline-block",
+                          marginRight: "10px"
+                        }}
                       />
+                      <Card.Title style={{ color: themeStyles.text, display: "inline-block" }}>
+                        {data && data?.length > 0 ? (
+                          <p style={{ marginBottom: "0px" }}>
+                            {item_nodo.historia_de_usuario}
+                          </p>
+                        ) : (
+                          <p style={{ marginBottom: "0px" }}>
+                            No hay datos disponibles
+                          </p>
+                        )}
+                      </Card.Title>
+                      <Card.Text style={{ color: themeStyles.text }}>
+                        {data && data?.length > 0 ? (
+                          <p style={{ marginBottom: "0px" }}>
+                            {item_nodo.criterio_aceptacion}
+                          </p>
+                        ) : (
+                          <p style={{ marginBottom: "0px" }}>
+                            No hay datos disponibles
+                          </p>
+                        )}
+                      </Card.Text>
                     </Card.Body>
                   </Card>
                 ))}
               </Accordion.Body>
             </Accordion.Item>
-
-            {/* Sección 2 */}
-            <Accordion.Item eventKey="1">
-              <Accordion.Header
-                style={{ backgroundColor: themeStyles.primary }}
-              >
-                Sección 2
-              </Accordion.Header>
-              <Accordion.Body>
-                {[1, 2, 3].map((index) => (
-                  <Card
-                    key={`sec2-${index}`}
-                    className="mb-3"
-                    style={{
-                      backgroundColor: themeStyles.cardBackground,
-                      borderColor: themeStyles.accent,
-                    }}
-                  >
-                    <Card.Body>
-                      <Card.Title style={{ color: themeStyles.text }}>
-                        Card {index} - Sección 2
-                      </Card.Title>
-                      <Card.Text style={{ color: themeStyles.text }}>
-                        Contenido de la tarjeta {index}.
-                      </Card.Text>
-                      <Form.Check
-                        type="checkbox"
-                        label="Seleccionar"
-                        checked={selectedCards[`sec2-${index}`] || false}
-                        onChange={() => handleCheckboxChange(`sec2-${index}`)}
-                      />
-                    </Card.Body>
-                  </Card>
-                ))}
-              </Accordion.Body>
-            </Accordion.Item>
-
-            {/* Sección 3 */}
-            <Accordion.Item eventKey="2">
-              <Accordion.Header
-                style={{ backgroundColor: themeStyles.primary }}
-              >
-                Sección 3
-              </Accordion.Header>
-              <Accordion.Body>
-                {[1, 2, 3].map((index) => (
-                  <Card
-                    key={`sec3-${index}`}
-                    className="mb-3"
-                    style={{
-                      backgroundColor: themeStyles.cardBackground,
-                      borderColor: themeStyles.accent,
-                    }}
-                  >
-                    <Card.Body>
-                      <Card.Title style={{ color: themeStyles.text }}>
-                        Card {index} - Sección 3
-                      </Card.Title>
-                      <Card.Text style={{ color: themeStyles.text }}>
-                        Contenido de la tarjeta {index}.
-                      </Card.Text>
-                      <Form.Check
-                        type="checkbox"
-                        label="Seleccionar"
-                        checked={selectedCards[`sec3-${index}`] || false}
-                        onChange={() => handleCheckboxChange(`sec3-${index}`)}
-                      />
-                    </Card.Body>
-                  </Card>
-                ))}
-              </Accordion.Body>
-            </Accordion.Item>
+            ))}
           </Accordion>
 
-          {/* Botón de Aceptar al final */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "flex-end",
+              margin: "auto",
               marginTop: "20px",
+              width: "150px",
             }}
           >
             <ButtonB
@@ -212,7 +190,6 @@ function HomePage() {
                 borderColor: themeStyles.accent,
                 color: themeStyles.text,
               }}
-              size="lg"
               onClick={handleAccept}
             >
               Aceptar
