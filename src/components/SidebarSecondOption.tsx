@@ -126,7 +126,7 @@ const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
             <div className="menu-icon" onClick={toggleSidebar}>
               ☰
             </div>
-            <span>Crear nueva estimación</span>
+            <span style={{paddingLeft: "50px"}}>Crear nueva estimación</span>
           </header>
         {/* </div> */}
       </Portal>
@@ -203,7 +203,6 @@ const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
                 <div className="popup-buttons">
                   <button onClick={handleAddFile}>Agregar</button>
                   <button onClick={closePopup}>Cancelar</button>
-                  <button onClick={closePopup}>Desde Cero</button>
                 </div>
               </div>
             </div>

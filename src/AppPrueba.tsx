@@ -20,7 +20,9 @@ function AppPrueba() {
         <div style={{
           flexGrow: 1, 
           marginLeft: isCollapsed ? '110px' : '280px',
-          padding: '20px'
+          padding: '20px',
+          paddingTop: '70px',
+          transition: "margin-left 0.3s ease",
         }}>
           <Routes>
             <Route path="/" element={<HomePage />} />

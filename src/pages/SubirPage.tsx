@@ -7,6 +7,7 @@ import {
   TableRow,
   Paper,
   Button,
+  Box,
 } from "@mui/material";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
@@ -27,6 +28,7 @@ const SubirPage: React.FC = () => {
   const location = useLocation();
   const csvData = location.state?.csvData || "No hay datos recibidos";
   const jsonData = location.state?.jsonData || "No hay datos recibidos";
+  const projectName = location.state?.projectName || "No hay datos recibidos";
 
   // ---- Es la primera fila de la tabla----
   const initialHeaders = [
@@ -161,8 +163,7 @@ const SubirPage: React.FC = () => {
       }
 
       matrix.push(dataRow);
-
-    })
+    });
 
     return matrix;
   }
@@ -201,7 +202,6 @@ const SubirPage: React.FC = () => {
 
   useEffect(() => {
     if (jsonData && jsonData !== "No hay datos recibidos") {
-      console.log("jsondata antes de entrar", jsonData)
       const parsedJson = convertJsonToMatrix(jsonData);
       console.log("jsonData", jsonData);
       console.log("parsedData", parsedJson);
@@ -476,161 +476,170 @@ const SubirPage: React.FC = () => {
   //   });
   // };
 
-  // -------Agrega columnas a la tabla-----
   return (
-    <div onBlur={(event) => handleMouseLeave(event)}>
-      <h2 style={{ fontWeight: "600", marginBottom: "25px" }}>
-        Crear nueva estimación
-      </h2>
-      <TableContainer
-        component={Paper}
-        style={{
-          backgroundColor: "#c2edce",
-          width: "100%",
-          height: "100%",
-          overflowX: data[0] && data[0].length > 12 ? "auto" : "hidden",
-          overflowY: "auto",
-          position: "relative", // Para el posicionamiento de los botones flotantes
-          maxWidth: "1560px", // Ancho máximo basado en 12 columnas predeterminadas
-          whiteSpace: "nowrap", // Mantiene las columnas en una sola línea para el scroll horizontal
-        }}
-      >
-        <Table
-          style={{
-            borderCollapse: "collapse",
-            marginTop: "10px",
-            tableLayout: "auto",
-            width: "100%",
-            minWidth:
-              data[0] && data[0].length > 12
-                ? `${data[0].length * 100}px`
-                : "100%",
-          }}
-        >
-          <TableBody>
-            {data.map((row, rowIndex) => (
-              <TableRow key={rowIndex}>
-                {row.map((cell, colIndex) => (
-                  <TableCell
-                    key={colIndex}
-                    style={{
-                      border: "none",
-                      padding: "2px",
-                      width: ancho[colIndex] || "100px",
-                    }}
-                    onFocus={() => handleMouseEnter(rowIndex, colIndex)}
-                  >
-                    <textarea
-                      value={cell}
-                      onChange={(e) =>
-                        handleCellChange(rowIndex, colIndex, e.target.value)
-                      }
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = "auto";
+    <Box
+      sx={{
+        display: "flex",
+        height: "100vh",
+        backgroundColor: themeStyles.background,
+      }}
+    >
+      <Box sx={{ padding: "20px", flexGrow: 1 }}>
+        <div onBlur={(event) => handleMouseLeave(event)}>
+          <TableContainer
+            component={Paper}
+            style={{
+              backgroundColor: "#c2edce",
+              width: "100%",
+              height: "100%",
+              overflowX: data[0] && data[0].length > 12 ? "auto" : "hidden",
+              overflowY: "auto",
+              position: "relative", // Para el posicionamiento de los botones flotantes
+              maxWidth: "1560px", // Ancho máximo basado en 12 columnas predeterminadas
+              whiteSpace: "nowrap", // Mantiene las columnas en una sola línea para el scroll horizontal
+            }}
+          >
+            <Table
+              style={{
+                borderCollapse: "collapse",
+                marginTop: "10px",
+                tableLayout: "auto",
+                width: "100%",
+                minWidth:
+                  data[0] && data[0].length > 12
+                    ? `${data[0].length * 100}px`
+                    : "100%",
+              }}
+            >
+              <TableBody>
+                {data.map((row, rowIndex) => (
+                  <TableRow key={rowIndex}>
+                    {row.map((cell, colIndex) => (
+                      <TableCell
+                        key={colIndex}
+                        style={{
+                          border: "none",
+                          padding: "2px",
+                          width: ancho[colIndex] || "100px",
+                        }}
+                        onFocus={() => handleMouseEnter(rowIndex, colIndex)}
+                      >
+                        <textarea
+                          value={cell}
+                          onChange={(e) =>
+                            handleCellChange(rowIndex, colIndex, e.target.value)
+                          }
+                          onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement;
+                            target.style.height = "auto";
 
-                        // const cellHeight = Math.min(target.scrollHeight, 100); // Limit to 300px
-                        // target.style.height = `${cellHeight}px`;
-                        //---------------------------------------------------------------------\\
-                        const maxHeight = 600;
-                        let asignedHeight = 0;
-                        console.log("scrollHeight:", target.scrollHeight);
-                        if (target.scrollHeight <= maxHeight) {
-                          // target.style.height = `${target.scrollHeight}px`;
-                          // opcion 2
-                          asignedHeight = target.scrollHeight;
-                        } else {
-                          // Si supera el máximo, limitamos la altura y permitimos el scrollbar
-                          // target.style.height = `${maxHeight}px`;
-                          // opcion 2
-                          asignedHeight = maxHeight;
-                        }
+                            // const cellHeight = Math.min(target.scrollHeight, 100); // Limit to 300px
+                            // target.style.height = `${cellHeight}px`;
+                            //---------------------------------------------------------------------\\
+                            const maxHeight = 600;
+                            let asignedHeight = 0;
+                            console.log("scrollHeight:", target.scrollHeight);
+                            if (target.scrollHeight <= maxHeight) {
+                              // target.style.height = `${target.scrollHeight}px`;
+                              // opcion 2
+                              asignedHeight = target.scrollHeight;
+                            } else {
+                              // Si supera el máximo, limitamos la altura y permitimos el scrollbar
+                              // target.style.height = `${maxHeight}px`;
+                              // opcion 2
+                              asignedHeight = maxHeight;
+                            }
 
-                        // Imprimimos el scrollHeight en la consola
+                            // Imprimimos el scrollHeight en la consola
 
-                        let maxHeightFound = adjustRowHeight(
-                          rowIndex,
-                          colIndex,
-                          asignedHeight
-                        );
-                        target.style.height = `${maxHeightFound}px`;
-                        console.log("altura asignada:", target.style.height);
+                            let maxHeightFound = adjustRowHeight(
+                              rowIndex,
+                              colIndex,
+                              asignedHeight
+                            );
+                            target.style.height = `${maxHeightFound}px`;
+                            console.log(
+                              "altura asignada:",
+                              target.style.height
+                            );
 
-                        // adjustRowHeight(
-                        //   rowIndex,
-                        //   colIndex,
-                        //   target.scrollHeight
-                        // );
-                      }}
-                      style={{
-                        borderRadius: "3px",
-                        padding: "5px",
-                        border: "none",
-                        width: "100%",
-                        resize: "none", // Disable manual resizing
-                        overflowY: "auto", // Enable vertical scrolling
-                        maxHeight: "600px", // Set maximum height
-                        height: `${rowHeights[rowIndex]}px`, // Sync with row height
-                      }}
-                      disabled={rowIndex === 0 && colIndex < 12}
-                    />
-                  </TableCell>
+                            // adjustRowHeight(
+                            //   rowIndex,
+                            //   colIndex,
+                            //   target.scrollHeight
+                            // );
+                          }}
+                          style={{
+                            borderRadius: "3px",
+                            padding: "5px",
+                            border: "none",
+                            width: "100%",
+                            resize: "none", // Disable manual resizing
+                            overflowY: "auto", // Enable vertical scrolling
+                            maxHeight: "600px", // Set maximum height
+                            height: `${rowHeights[rowIndex]}px`, // Sync with row height
+                          }}
+                          disabled={rowIndex === 0 && colIndex < 12}
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
                 ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      {hoveredCell && (
-        <div
-          style={{
-            position: "absolute",
-            top: getTopPosition(hoveredCell[0], hoveredCell[1]),
-            left: "calc(100% - 400px)",
-            transform: "translateY(-100%)",
-            display: "flex",
-            gap: "5px",
-            zIndex: 1,
-          }}
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            size="small"
-            onClick={addRow}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {hoveredCell && (
+            <div
+              style={{
+                position: "absolute",
+                top: getTopPosition(hoveredCell[0], hoveredCell[1]),
+                left: "calc(100% - 400px)",
+                transform: "translateY(-100%)",
+                display: "flex",
+                gap: "5px",
+                zIndex: 1,
+              }}
+            >
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={addRow}
+              >
+                +
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={() => removeRow(hoveredCell[0], hoveredCell[1])}
+              >
+                -
+              </Button>
+            </div>
+          )}
+          <div
+            style={{
+              margin: "auto",
+              marginTop: "20px",
+              width: "150px",
+            }}
           >
-            +
-          </Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            size="small"
-            onClick={() => removeRow(hoveredCell[0], hoveredCell[1])}
-          >
-            -
-          </Button>
+            <BstpButton
+              onClick={crearEstimacion}
+              style={{
+                width: "150px",
+                backgroundColor: themeStyles.cardBackground,
+                borderColor: themeStyles.accent,
+                color: themeStyles.text,
+              }}
+            >
+              Crear estimacion
+            </BstpButton>
+          </div>
         </div>
-      )}
-      <div
-        style={{
-          margin: "auto",
-          marginTop: "20px",
-          width: "150px",
-        }}
-      >
-        <BstpButton
-          onClick={crearEstimacion}
-          style={{
-            width: "150px",
-            backgroundColor: themeStyles.cardBackground,
-            borderColor: themeStyles.accent,
-            color: themeStyles.text,
-          }}
-        >
-          Crear estimacion
-        </BstpButton>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 
