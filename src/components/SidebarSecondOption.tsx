@@ -5,6 +5,8 @@ import "./CreateEstimationPopup.css";
 import "./SidebarTopbar.css";
 import { useNavigate } from "react-router-dom";
 import ReactDOM from "react-dom";
+import { FaHome, FaFileImport, FaPlus, FaBook, FaFileAlt } from "react-icons/fa";
+
 interface SidebarSecondOptionProps {
   isCollapsed: boolean;
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
@@ -154,24 +156,12 @@ const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
           SEED E.M
         </div>
         {/* <div style={{ padding: "0 24px", marginBottom: "8px" }}>General</div> */}
-        <Menu
-          menuItemStyles={{
-            button: {
-              // the active class will be added automatically by react router
-              // so we can use it to style the active menu item
-              [`&.active`]: {
-                backgroundColor: "#A7DCC6",
-                color: "#b6c8d9",
-              },
-            },
-          }}
-        >
-          {/* <MenuItem component={<Link to="/about" />}> SEED E.M</MenuItem> */}
-          <MenuItem onClick={openPopup}>+ Importar</MenuItem>
-          <MenuItem component={<Link to="/" />}> Inicio</MenuItem>
-          <MenuItem component={<Link to="/seleccionar" />}> Nuevo</MenuItem>
-          <MenuItem component={<Link to="/crear" />}> Crear</MenuItem>
-          <MenuItem component={<Link to="/manual" />}> Manual</MenuItem>
+        <Menu menuItemStyles={{ button: { [`&.active`]: { backgroundColor: "#A7DCC6" } } }}>
+          <MenuItem icon={<FaFileImport />} onClick={openPopup}>+ Importar</MenuItem>
+          <MenuItem icon={<FaHome />} component={<Link to="/" />}>Inicio</MenuItem>
+          <MenuItem icon={<FaPlus />} component={<Link to="/seleccionar" />}>Nuevo</MenuItem>
+          <MenuItem icon={<FaFileAlt />} component={<Link to="/crear" />}>Crear</MenuItem>
+          <MenuItem icon={<FaBook />} component={<Link to="/manual" />}>Manual</MenuItem>
         </Menu>
         {isPopupOpen && (
           <Portal>
