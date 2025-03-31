@@ -8,10 +8,25 @@ import {
   Paper,
   Button,
   Box,
+  TextField,
+  CircularProgress,
+  Backdrop,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
+  Typography,
 } from "@mui/material";
-import axios from "axios";
 import { useLocation } from "react-router-dom";
 import { Button as BstpButton } from "react-bootstrap";
+import ExcelJS from "exceljs";
+import { CheckCircleOutline, Cancel } from "@mui/icons-material";
+import { green, red } from "@mui/material/colors";
+import { crearEstimacion, editarEstimacion } from "../services/neo4jService";
+import { FaTrashAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import Tooltip from "@mui/material/Tooltip";
 
 const SubirPage: React.FC = () => {
   const themeStyles = {
@@ -21,17 +36,58 @@ const SubirPage: React.FC = () => {
     background: "#FFFFFF", // Blanco
     text: "#374151", // Gris oscuro
     cardBackground: "#CFEAD8", // Verde claro
+    buttonBackground: "#C2EDCE", // Verde claro
   };
 
-  const [hoveredCell, setHoveredCell] = useState<number[] | null>(null);
+  const navigate = useNavigate(); // Hook para la redirección
+  const ubicacion = useLocation();
 
-  const location = useLocation();
-  const csvData = location.state?.csvData || "No hay datos recibidos";
-  const jsonData = location.state?.jsonData || "No hay datos recibidos";
-  const projectName = location.state?.projectName || "No hay datos recibidos";
+  const csvDatos = ubicacion.state?.csvData || "No hay datos recibidos";
+  const jsonDatos = ubicacion.state?.jsonData || "No hay datos recibidos";
+  const nombreProyecto =
+    ubicacion.state?.nombreProyecto || "No hay datos recibidos";
+  const proyectoID = ubicacion.state?.proyectoID || "No hay datos recibidos";
+  const comentariosGuardados =
+    ubicacion.state?.comentariosGuardados || "No hay datos recibidos";
+  const modo = ubicacion.state?.modo || "No hay datos recibidos";
+
+  const [celdaSeleccionada, setCeldaSeleccionada] = useState<number[] | null>(
+    null
+  );
+  const [abrirPopup, setAbrirPopup] = useState(false);
+  const [mensajePopup, setMensajePopup] = useState<string | JSX.Element>("");
+  const [esExitoso, setEsExitoso] = useState(true);
+  const [comentarios, setComentarios] = useState<string[][]>([]);
+  const [nuevosComentariosID, setNuevosComentariosID] = useState<number[]>([]);
+  const [comentarioParaAgregar, setComentarioParaAgregar] =
+    useState<string>("");
+  const [nombreDeProyectoNuevo, setNombreDeProyectoNuevo] =
+    useState(nombreProyecto);
+  const [cambiosHechos, setCambiosHechos] = useState(
+    modo === "crear" ? true : false
+  );
+  const [datos, setDatos] = useState<string[][]>(() => {
+    const datosGuardados = localStorage.getItem("tableData");
+    if (datosGuardados) {
+      return JSON.parse(datosGuardados);
+    }
+
+    return [
+      encabezadoInicial,
+      Array(encabezadoInicial.length).fill(""),
+      Array(encabezadoInicial.length).fill(""),
+      Array(encabezadoInicial.length).fill(""),
+      Array(encabezadoInicial.length).fill(""),
+      Array(encabezadoInicial.length).fill(""),
+    ];
+  });
+  const [alturaFilas, setAlturaFilas] = useState<number[]>(() =>
+    datos.map(() => 30)
+  );
+  const [cargando, setCargando] = useState(false);
 
   // ---- Es la primera fila de la tabla----
-  const initialHeaders = [
+  const encabezadoInicial = [
     "#",
     "Categoría",
     "Actividad o HU",
@@ -44,6 +100,9 @@ const SubirPage: React.FC = () => {
     "Backend",
     "Frontend",
     "QA/Doc",
+    "uuid",
+    "modificado",
+    "eliminado",
   ];
 
   const ancho = [
@@ -61,73 +120,87 @@ const SubirPage: React.FC = () => {
     "100px",
   ];
 
-  const [data, setData] = useState<string[][]>(() => {
-    const savedData = localStorage.getItem("tableData");
-    if (savedData) {
-      return JSON.parse(savedData);
+  function convertirCSVEnArreglos(csvString: string): string[][] {
+    // Initialize with the predefined header
+    const filas: string[][] = [encabezadoInicial];
+
+    // Skip the header line by finding the first newline
+    const primeraLineaNuevaIndex = csvString.indexOf("\n");
+    if (primeraLineaNuevaIndex === -1) {
+      // If there's no newline, return just the header
+      return filas;
     }
 
-    return [
-      initialHeaders,
-      Array(initialHeaders.length).fill(""),
-      Array(initialHeaders.length).fill(""),
-      Array(initialHeaders.length).fill(""),
-      Array(initialHeaders.length).fill(""),
-      Array(initialHeaders.length).fill(""),
-    ];
-  });
+    // Start processing from after the first newline
+    const contenidoSinHeader = csvString.substring(primeraLineaNuevaIndex + 1);
 
-  const [rowHeights, setRowHeights] = useState<number[]>(() =>
-    data.map(() => 30)
-  );
+    let filaActual: string[] = [];
+    let campoActual = "";
+    let comillasInternas = false;
 
-  function parseCSV(csvString: string): string[][] {
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
-    let currentField = "";
-    let insideQuotes = false;
-
-    for (let i = 0; i < csvString.length; i++) {
-      const char = csvString[i];
-      const nextChar = csvString[i + 1];
+    // Process the remaining content (skipping the header)
+    for (let i = 0; i < contenidoSinHeader.length; i++) {
+      const char = contenidoSinHeader[i];
+      const proximoChar = contenidoSinHeader[i + 1];
 
       if (char === '"') {
         // Si encontramos una comilla, verificar si estamos dentro de comillas
-        if (insideQuotes && nextChar === '"') {
+        if (comillasInternas && proximoChar === '"') {
           // Si es una comilla escapada, añadirla al campo actual
-          currentField += '"';
+          campoActual += '"';
           i++; // Saltar la siguiente comilla
         } else {
           // Cambiar el estado de dentro de comillas
-          insideQuotes = !insideQuotes;
+          comillasInternas = !comillasInternas;
         }
-      } else if (char === "," && !insideQuotes) {
+      } else if (char === "," && !comillasInternas) {
         // Si encontramos una coma fuera de comillas, es un nuevo campo
-        currentRow.push(currentField);
-        currentField = "";
-      } else if (char === "\n" && !insideQuotes) {
+        filaActual.push(campoActual);
+        campoActual = "";
+      } else if (char === "\n" && !comillasInternas) {
         // Si encontramos un salto de línea fuera de comillas, es una nueva fila
-        currentRow.push(currentField);
-        rows.push(currentRow);
-        currentRow = [];
-        currentField = "";
+        filaActual.push(campoActual);
+
+        // Asegúrese de que la fila tenga la longitud correcta
+        while (filaActual.length < encabezadoInicial.length) {
+          filaActual.push("");
+        }
+
+        filas.push(filaActual);
+        filaActual = [];
+        campoActual = "";
       } else {
         // Cualquier otro carácter, agregar al campo actual
-        currentField += char;
+        campoActual += char;
       }
     }
 
     // Agregar la última fila si queda algo pendiente
-    if (currentField !== "" || currentRow.length > 0) {
-      currentRow.push(currentField);
-      rows.push(currentRow);
+    if (campoActual !== "" || filaActual.length > 0) {
+      filaActual.push(campoActual);
+
+      // Asegúrese de que la última fila tenga la longitud correcta
+      while (filaActual.length < encabezadoInicial.length) {
+        filaActual.push("");
+      }
+
+      filas.push(filaActual);
     }
 
-    return rows;
+    // Añadir columnas de uuid, modificado y eliminado con valores por defecto
+    for (let i = 1; i < filas.length; i++) {
+      // Valores predeterminados: uuid vacío, no modificado (0), no eliminado (0)
+      filas[i][12] = filas[i][12] || ""; // uuid
+      filas[i][13] = filas[i][13] || "0"; // modificado
+      filas[i][14] = filas[i][14] || "0"; // eliminado
+    }
+
+    console.log("CSV Processed:", filas);
+    return filas;
   }
 
-  function convertJsonToMatrix(jsonData: any): any[][] {
-    const headerTable = [
+  function convertirJsonAMatriz(jsonData: any): any[][] {
+    const tablaDeEncabezado = [
       "",
       "categoria",
       "historia_de_usuario",
@@ -140,18 +213,24 @@ const SubirPage: React.FC = () => {
       "backend",
       "frontend",
       "qa",
+      "uuid",
+      "modificado",
+      "eliminado",
     ];
 
     // Inicializar la matriz con la fila de encabezados
-    const matrix: any[][] = [initialHeaders];
+    const matriz: any[][] = [encabezadoInicial];
 
     jsonData.forEach((element: any, parsedJsonIndex: any) => {
-      const dataRow: any[] = new Array(headerTable.length).fill("");
+      const dataRow: any[] = new Array(tablaDeEncabezado.length).fill("");
+      dataRow[tablaDeEncabezado.length - 1] = "0"; // Marcar como no eliminado
+      dataRow[tablaDeEncabezado.length - 2] = "0"; // Marcar como no modificado
       const parsedData = JSON.parse(element);
+      console.log("parsedData", parsedData);
 
       for (const [key, value] of Object.entries(parsedData)) {
         // Encontrar el índice correspondiente en el headerTable
-        const index = headerTable.indexOf(key);
+        const index = tablaDeEncabezado.indexOf(key);
 
         if (index !== -1) {
           // Limpiar y formatear el valor según sea necesario
@@ -162,135 +241,197 @@ const SubirPage: React.FC = () => {
         }
       }
 
-      matrix.push(dataRow);
+      matriz.push(dataRow);
     });
 
-    return matrix;
+    return matriz;
   }
 
   useEffect(() => {
-    if (csvData && csvData !== "No hay datos recibidos") {
-      const parsedData = parseCSV(csvData);
-      setData(parsedData);
+    if (csvDatos && csvDatos !== "No hay datos recibidos") {
+      const parsedData = convertirCSVEnArreglos(csvDatos);
+      setDatos(parsedData);
+
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "auto", // Cambiado de 'instant' a 'auto'
+        });
+      });
 
       // Calcular alturas iniciales para cada fila
       const calculateRowHeights = () => {
-        const tempContainer = document.createElement("div");
-        tempContainer.style.position = "absolute";
-        tempContainer.style.visibility = "hidden";
-        tempContainer.style.whiteSpace = "pre-wrap"; // Simula el texto envuelto
-        tempContainer.style.width = "100px"; // Ajustar al ancho típico de celdas
-        document.body.appendChild(tempContainer);
+        const contenedorTemporal = document.createElement("div");
+        contenedorTemporal.style.position = "absolute";
+        contenedorTemporal.style.visibility = "hidden";
+        contenedorTemporal.style.whiteSpace = "pre-wrap"; // Simula el texto envuelto
+        contenedorTemporal.style.width = "100px"; // Ajustar al ancho típico de celdas
+        document.body.appendChild(contenedorTemporal);
 
-        const heights = parsedData.map((row) => {
-          let maxHeight = 30; // Altura mínima
+        const alturas = parsedData.map((row) => {
+          let alturaMaxima = 30; // Altura mínima
           row.forEach((cell) => {
-            tempContainer.textContent = cell; // Añade contenido al contenedor temporal
-            tempContainer.style.height = "auto"; // Permite medir el alto dinámicamente
-            maxHeight = Math.max(maxHeight, tempContainer.scrollHeight);
+            contenedorTemporal.textContent = cell; // Añade contenido al contenedor temporal
+            contenedorTemporal.style.height = "auto"; // Permite medir el alto dinámicamente
+            alturaMaxima = Math.max(
+              alturaMaxima,
+              contenedorTemporal.scrollHeight
+            );
           });
-          return Math.min(600, maxHeight); // px por Defauld
+          return Math.min(600, alturaMaxima); // px por Defauld
         });
 
-        document.body.removeChild(tempContainer); // Eliminar contenedor temporal
-        return heights;
+        document.body.removeChild(contenedorTemporal); // Eliminar contenedor temporal
+        return alturas;
       };
 
-      setRowHeights(calculateRowHeights());
+      setAlturaFilas(calculateRowHeights());
     }
-  }, [csvData]);
+  }, [csvDatos]);
 
   useEffect(() => {
-    if (jsonData && jsonData !== "No hay datos recibidos") {
-      const parsedJson = convertJsonToMatrix(jsonData);
-      console.log("jsonData", jsonData);
+    if (jsonDatos && jsonDatos !== "No hay datos recibidos") {
+      const parsedJson = convertirJsonAMatriz(jsonDatos);
+      console.log("jsonDatasaasdf", jsonDatos);
       console.log("parsedData", parsedJson);
-      setData(parsedJson);
+      setDatos(parsedJson);
+
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "auto", // Cambiado de 'instant' a 'auto'
+        });
+      });
 
       // Calcular alturas iniciales para cada fila
       const calculateRowHeights = () => {
-        const tempContainer = document.createElement("div");
-        tempContainer.style.position = "absolute";
-        tempContainer.style.visibility = "hidden";
-        tempContainer.style.whiteSpace = "pre-wrap"; // Simula el texto envuelto
-        tempContainer.style.width = "100px"; // Ajustar al ancho típico de celdas
-        document.body.appendChild(tempContainer);
+        const contenedorTemporal = document.createElement("div");
+        contenedorTemporal.style.position = "absolute";
+        contenedorTemporal.style.visibility = "hidden";
+        contenedorTemporal.style.whiteSpace = "pre-wrap"; // Simula el texto envuelto
+        contenedorTemporal.style.width = "200px"; // Ajustar al ancho típico de celdas
+        document.body.appendChild(contenedorTemporal);
 
-        const heights = parsedJson.map((row) => {
-          let maxHeight = 30; // Altura mínima
+        const alturas = parsedJson.map((row) => {
+          let alturaMaxima = 30; // Altura mínima
           row.forEach((cell) => {
-            tempContainer.textContent = cell; // Añade contenido al contenedor temporal
-            tempContainer.style.height = "auto"; // Permite medir el alto dinámicamente
-            maxHeight = Math.max(maxHeight, tempContainer.scrollHeight);
+            contenedorTemporal.textContent = cell; // Añade contenido al contenedor temporal
+            contenedorTemporal.style.height = "auto"; // Permite medir el alto dinámicamente
+            alturaMaxima = Math.max(
+              alturaMaxima,
+              contenedorTemporal.scrollHeight
+            );
+            // maxHeight = tempContainer.scrollHeight;
           });
-          return Math.min(600, maxHeight); // px por Defauld
+          // return Math.min(600, maxHeight); // px por Defauld
+          return alturaMaxima; // px por Defauld
         });
 
-        document.body.removeChild(tempContainer); // Eliminar contenedor temporal
-        return heights;
+        document.body.removeChild(contenedorTemporal); // Eliminar contenedor temporal
+        return alturas;
       };
 
-      setRowHeights(calculateRowHeights());
+      setAlturaFilas(calculateRowHeights());
     }
-  }, [jsonData]);
+  }, [jsonDatos]);
 
   useEffect(() => {
-    localStorage.setItem("tableData", JSON.stringify(data));
-  }, [data]);
+    if (
+      comentariosGuardados &&
+      comentariosGuardados !== "No hay datos recibidos"
+    ) {
+      setComentarios(comentariosGuardados);
+    }
+  }, [comentariosGuardados]);
 
-  const addRow = () => {
-    setData((prevData) => [...prevData, Array(prevData[0].length).fill("")]);
-  };
+  useEffect(() => {
+    localStorage.setItem("tableData", JSON.stringify(datos));
+  }, [datos]);
 
-  const removeRow = (rowIndex: number, columnIndex: number) => {
-    if (data.length > 2) {
-      setData((prevData) => {
-        const newData = [...prevData]; // Create a shallow copy of the array
-        newData.splice(rowIndex, 1); // Remove the element at rowIndex
-        return newData; // Return the modified array
+  const agregarFila = () => {
+    if (celdaSeleccionada) {
+      setDatos((prevData) => {
+        const newData = [...prevData]; // Copia del array de datos
+        const newRow = Array(prevData[0].length).fill(""); // Nueva fila vacía
+        newRow[0] = prevData[celdaSeleccionada[0]][0] + 1; // Número de fila
+        newRow[prevData[0].length - 2] = "1"; // Número de fila
+
+        newData.splice(celdaSeleccionada[0] + 1, 0, newRow); // Inserta la nueva fila justo debajo
+
+        for (let i = celdaSeleccionada[0] + 2; i < newData.length; i++) {
+          console.log("fila", i);
+          newData[i][0] = newData[i][0] + 1; // Número de fila
+        }
+
+        return newData;
       });
     }
   };
 
-  const handleCellChange = (
+  const eliminarFila = (rowIndex: number) => {
+    if (datos.length > 2) {
+      setDatos((prevData) => {
+        const newData = [...prevData]; // Copia del array
+        // newData.splice(rowIndex, 1); // Elimina la fila seleccionada
+        // newData[0].length - 1 es la columna "eliminado"
+        newData[rowIndex][newData[0].length - 1] = "1"; // Marca la fila como eliminada
+
+        // Si la fila eliminada era la última, mover la selección arriba
+        let newHoveredCell = celdaSeleccionada;
+        if (celdaSeleccionada && celdaSeleccionada[0] >= newData.length) {
+          newHoveredCell = [newData.length - 1, celdaSeleccionada[1]];
+        }
+
+        setCeldaSeleccionada(newHoveredCell); // Actualizar la celda seleccionada
+        return newData;
+      });
+      setCambiosHechos(true);
+    }
+  };
+
+  const actualizarCeldaEnCambio = (
     rowIndex: number,
     colIndex: number,
     value: string
   ) => {
     // Actualiza el estado local de la tabla
-    setData((prevData) => {
+    setDatos((prevData) => {
       const newData = [...prevData];
       newData[rowIndex] = [...prevData[rowIndex]]; // Copia la fila para evitar mutaciones directas
       newData[rowIndex][colIndex] = value; // Actualiza el valor del input
+      newData[rowIndex][newData[0].length - 2] = "1"; // Actualiza el valor del modificado
       // Guarda los datos actualizados en localStorage
       localStorage.setItem("tableData", JSON.stringify(newData));
       return newData; // Actualiza el estado
     });
+    setCambiosHechos(true);
   };
 
-  const handleMouseEnter = (rowIndex: number, colIndex: number) => {
-    setHoveredCell([rowIndex, colIndex]);
+  const ingresoMouse = (rowIndex: number, colIndex: number) => {
+    setCeldaSeleccionada([rowIndex, colIndex]);
   };
 
-  const handleMouseLeave = (event: FocusEvent<HTMLDivElement>) => {
-    // console.log("Related target:", event.relatedTarget);
-    // console.log("Current target:", event.currentTarget);
-    // console.log(!event.currentTarget.contains(event.relatedTarget));
+  const salidaMouse = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget)) {
-      setHoveredCell(null);
+      setCeldaSeleccionada(null);
     }
   };
 
-  const getTopPosition = (rowIndex: number, colIndex: number) => {
-    if (rowIndex === 0) {
-      return "100px";
-    }
-    if (colIndex === data[0].length - 1) {
-      return `${90 + 50 * rowIndex}px`;
-    }
+  const obtenerPosicionSuperior = (rowIndex: number) => {
+    const rowElements = document.querySelectorAll(".table-row");
+    if (!rowElements || !rowElements[rowIndex]) return "0px";
+    return `${rowElements[rowIndex].getBoundingClientRect().top}px`;
   };
 
-  function matrixToJson(matrix: string[][]): Record<string, any>[] {
+  const obtenerPosicionIzq = (colIndex: number) => {
+    const colElements = document.querySelectorAll(".table-col");
+    if (!colElements || !colElements[colIndex]) return "0px";
+    return `${colElements[colIndex].getBoundingClientRect().left}px`;
+  };
+
+  const crearEstimacionBody = (matrix: string[][]) => {
     if (matrix.length < 2) {
       throw new Error("La matriz debe tener al menos dos filas");
     }
@@ -309,57 +450,241 @@ const SubirPage: React.FC = () => {
       jsonArray.push(jsonObject);
     }
 
-    return jsonArray;
-  }
+    const body = {
+      historias_usuario: jsonArray,
+      nombre_proyecto: nombreDeProyectoNuevo,
+      comentarios: comentarios,
+    };
 
-  const crearEstimacion = async () => {
+    return body;
+  };
+
+  const editarEstimacionBody = (matrix: string[][]) => {
+    if (matrix.length < 2) {
+      throw new Error("La matriz debe tener al menos dos filas");
+    }
+
+    const headers = matrix[0];
+    const jsonArray: Record<string, any>[] = [];
+
+    for (let i = 1; i < matrix.length; i++) {
+      const row = matrix[i];
+      const jsonObject: Record<string, any> = {};
+
+      headers.forEach((header, index) => {
+        jsonObject[header] = row[index];
+      });
+
+      jsonArray.push(jsonObject);
+    }
+
+    const body = {
+      historias_usuario: jsonArray,
+      nombre_proyecto: nombreDeProyectoNuevo,
+      comentarios: nuevosComentariosID.length > 0 ? comentarios : [],
+      proyecto_uuid: proyectoID,
+    };
+
+    return body;
+  };
+
+  const descargarExcel = async (body: any) => {
+    const allHeaders = Object.keys(body.historias_usuario[0]);
+    const limitedHeaders = [allHeaders.slice(0, 12)];
+
+    // Convert each JSON object to an array of values and limit to first 12 columns
+    const tableData = body.historias_usuario.map((obj: any) =>
+      Object.values(obj).slice(0, 12)
+    );
+
+    // Combine all data (comments + headers + table rows)
+    let worksheetData;
+    if (comentarios && comentarios.length > 0) {
+      // Include comments section if there are comments
+      worksheetData = [
+        ["COMENTARIOS"],
+        ...comentarios,
+        [],
+        ...limitedHeaders,
+        ...tableData,
+      ];
+    } else {
+      // Skip comments section if there are no comments
+      worksheetData = [
+        ...limitedHeaders,
+        ...tableData,
+      ];
+    }
+
+    // 1) Create a new workbook
+    const workbook = new ExcelJS.Workbook();
+
+    // 2) Add a worksheet
+    const worksheet = workbook.addWorksheet("Hoja1");
+
+    // 3) Add the data rows
+    worksheet.addRows(worksheetData);
+
+    // 4) Apply styles
+    //    - comments occupy rows 1..comments.length
+    //    - headers are on row = comments.length + 1
+    //    - table data starts at row = comments.length + 2
+    const totalRows = worksheetData.length;
+    const totalCols = worksheetData[worksheetData.length - 1]?.length || 0;
+
+    for (let rowIndex = 1; rowIndex <= totalRows; rowIndex++) {
+      const row = worksheet.getRow(rowIndex);
+
+      // Set row height (similar to hpt in xlsx-style)
+      row.height = 25;
+
+      for (let colIndex = 1; colIndex <= totalCols; colIndex++) {
+        const cell = row.getCell(colIndex);
+        const cellValue = cell.value?.toString() || "";
+
+        // Wrap text + vertical align middle
+        cell.alignment = {
+          wrapText: true,
+          vertical: "middle",
+        };
+
+        // Thin borders
+        if (cellValue.trim() !== "") {
+          // Thin borders for non-empty cells
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        };
+
+        // If this row is the "header row"
+        if (rowIndex === 1 && colIndex === 1) {
+          // Blue background, white bold text
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF85B814" }, // "FF" + "0000FF" => Blue
+          };
+          cell.font = {
+            color: { argb: "FFFFFFFF" }, // White
+            bold: true,
+          };
+        } else if (rowIndex === comentarios.length + 3) {
+          // Other header cells
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF6064d1" }, // Light greenish
+          };
+          cell.font = {
+            color: { argb: "FFFFFFFF" },
+            bold: true,
+          };
+        }
+      }
+    }
+
+    // 5) Set column widths (e.g., first column = 30 chars)
+    const columnasAnchos: Record<number, number> = {
+      1: 30,
+      2: 30,
+      3: 50,
+      4: 50,
+    };
+    for (const key in columnasAnchos) {
+      const numKey = parseInt(key);
+      worksheet.getColumn(numKey).width = columnasAnchos[numKey];
+    }
+
+    // 6) Generate and download the file in the browser
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    // File name
+    const fileName = `${nombreDeProyectoNuevo || "output"}.xlsx`;
+
+    // Trigger download (plain JS way)
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+
+    // Clean up
+    URL.revokeObjectURL(link.href);
+  };
+
+  const guardarCambios = async () => {
     try {
-      const url = "http://localhost:4000/api/crear_estimacion/";
-      const body = {
-        categoria: "Desarrollo de software",
-        historia_usuario: "Login",
-        criterio_aceptacion: "Usuario puede iniciar sesión",
-        total: "10",
-        project_manager: "1",
-        diseño: "1",
-        arquitectura: "1",
-        infraestructura: "1",
-        backend: "1",
-        frontend: "1",
-        qa: "1",
-      };
-      const body2 = matrixToJson(data);
-      console.log("Datos a enviar:", body2);
+      setCargando(true);
+      if (modo === "crear") {
+        const body = crearEstimacionBody(datos);
+        console.log("Datos a enviar:", body);
 
-      const response = await axios.post(url, body2);
-      console.log("Respuesta del servidor:", response.data);
+        descargarExcel(body);
+
+        const respuesta = await crearEstimacion(body);
+        console.log("Respuesta del servidor:", respuesta.data);
+        setCargando(false);
+        setMensajePopup(
+          <p>
+            Proyecto{" "}
+            <span style={{ fontWeight: "600" }}>{nombreDeProyectoNuevo}</span>{" "}
+            creado exitosamente.
+          </p>
+        );
+        setEsExitoso(true);
+        setAbrirPopup(true);
+        setCambiosHechos(false);
+      } else if (modo === "editar") {
+        const body = editarEstimacionBody(datos);
+        console.log("Datos a enviar:", body);
+
+        descargarExcel(body);
+
+        const respuesta = await editarEstimacion(body);
+        console.log("Respuesta del servidor:", respuesta.data);
+        setCargando(false);
+        setMensajePopup(<p>Cambios guardados exitosamente.</p>);
+        setEsExitoso(true);
+        setAbrirPopup(true);
+        setCambiosHechos(false);
+      }
     } catch (error: any) {
+      setCargando(false);
       console.error(
         "Error al realizar el POST:",
         error.response ? error.response.data : error.message
       );
+      setMensajePopup(
+        <p>
+          Proyecto{" "}
+          <span style={{ fontWeight: "600" }}>{nombreDeProyectoNuevo}</span>{" "}
+          lastimosamente no fue creado exitosamente intente más tarde.
+        </p>
+      );
+      setEsExitoso(false);
+      setAbrirPopup(true);
     }
   };
 
-  // con esto se modifica el tamaño maximo vertical de cada celda
-  const adjustRowHeight = (
+  const ajustarAlturaFilas = (
     rowIndex: number,
     colIndex: number,
     cellHeight: number
   ) => {
-    // Calculate the maximum height for the row synchronously
-    const rowCells = data[rowIndex].map((_, colIdx) => {
+    const rowCells = datos[rowIndex].map((_, colIdx) => {
       const cellElement = document.querySelector(
         `tr:nth-child(${rowIndex + 1}) td:nth-child(${colIdx + 1}) textarea`
       ) as HTMLTextAreaElement;
-      // console.log("altura encontrada ", cellElement.scrollHeight, "en columna", colIdx + 1);
 
       if (cellElement) {
         // Forzar el re-cálculo del estilo
         cellElement.style.height = "auto"; // Restablecer altura para que se ajuste automáticamente
-        const recalculatedHeight = cellElement.scrollHeight; // Leer el scrollHeight correcto
-        // puede que sea el problema
-        // cellElement.style.height = `${recalculatedHeight}px`; // Establecer altura calculada
+        const recalculatedHeight = cellElement.scrollHeight;
         return recalculatedHeight;
       }
 
@@ -368,131 +693,184 @@ const SubirPage: React.FC = () => {
 
     const maxRowHeight = Math.max(...rowCells, cellHeight);
 
-    // Log values for debugging
-    console.log("Heights of cells in the row:", ...rowCells, cellHeight);
-    console.log("Max height of the row:", maxRowHeight);
     const highestCellCol = rowCells.findIndex((h) => h === maxRowHeight);
     let heightToAssign = 0;
-    console.log("maxrowheight", maxRowHeight);
-    console.log("cellheight", cellHeight);
-    console.log("colindex", colIndex);
-    console.log("highest", highestCellCol);
-    console.log(
-      "condicion",
-      maxRowHeight <= cellHeight ||
-        (maxRowHeight > cellHeight && colIndex !== highestCellCol)
-    );
+
     if (
       maxRowHeight <= cellHeight ||
       (maxRowHeight > cellHeight && colIndex !== highestCellCol)
     ) {
-      // Si el contenido cabe dentro del límite, ajusta la altura
-      // si se está escribiendo en la celda
       heightToAssign = maxRowHeight;
     } else {
-      // Si el contenido excede el límite, fija la altura al máximo
-      // si se está borrando en la celda
       heightToAssign = cellHeight;
     }
-
-    // Update the state
-    setRowHeights((prevHeights) => {
-      const updatedHeights = [...prevHeights];
-      // const highestCellCol = rowCells.findIndex((h) => h === maxRowHeight);
-      // if (
-      //   maxRowHeight <= cellHeight ||
-      //   (maxRowHeight > cellHeight && colIndex !== highestCellCol)
-      // ) {
-      //   // Si el contenido cabe dentro del límite, ajusta la altura
-      //   // si se está escribiendo en la celda
-      //   updatedHeights[rowIndex] = maxRowHeight;
-      // } else {
-      //   // Si el contenido excede el límite, fija la altura al máximo
-      //   // si se está borrando en la celda
-      //   updatedHeights[rowIndex] = cellHeight;
-      // }
-      updatedHeights[rowIndex] = maxRowHeight;
-      console.log("heighttoassign", heightToAssign);
-      console.log("updatedheights", updatedHeights);
-      return updatedHeights;
-    });
 
     return heightToAssign;
   };
 
-  // con esto se modifica el tamaño maximo vertical de cada celda
-  // const adjustRowHeight = (
-  //   rowIndex: number,
-  //   colIndex: number,
-  //   cellHeight: number
-  // ) => {
-  //   // Update the state
-  //   setRowHeights((prevHeights) => {
-  //     const updatedHeights = [...prevHeights];
-  //     // Calculate the maximum height for the row synchronously
-  //     const rowCells = data[rowIndex].map((_, colIdx) => {
-  //       const cellElement = document.querySelector(
-  //         `tr:nth-child(${rowIndex + 1}) td:nth-child(${colIdx + 1}) textarea`
-  //       ) as HTMLTextAreaElement;
-  //       // console.log("altura encontrada ", cellElement.scrollHeight, "en columna", colIdx + 1);
+  const agregarComentario = () => {
+    if (comentarioParaAgregar.trim()) {
+      setComentarios([...comentarios, [comentarioParaAgregar]]);
+      setComentarioParaAgregar("");
 
-  //       // return cellElement ? cellElement.scrollHeight : 30; // Default to 30px if no element is found
-  //       if (cellElement) {
-  //         // Forzar el re-cálculo del estilo
-  //         cellElement.style.height = 'auto'; // Restablecer altura para que se ajuste automáticamente
-  //         const recalculatedHeight = cellElement.scrollHeight; // Leer el scrollHeight correcto
-  //         // cellElement.style.height = `${recalculatedHeight}px`; // Establecer altura calculada
-  //         return recalculatedHeight;
-  //       }
+      if (modo === "editar") {
+        setNuevosComentariosID([...nuevosComentariosID, comentarios.length]);
+        setCambiosHechos(true);
+      }
+    }
+  };
 
-  //       return 0;
-  //     });
+  const eliminarComentario = (index: number) => {
+    setComentarios(comentarios.filter((_, i) => i !== index));
+    setCambiosHechos(true);
+    if (modo === "editar") {
+      setNuevosComentariosID(
+        nuevosComentariosID.filter((i) => {
+          if (i === index) {
+            setCambiosHechos(false);
+            return false;
+          } else {
+            return true;
+          }
+        })
+      );
+    }
+  };
 
-  //     const maxRowHeight = Math.max(...rowCells, cellHeight);
-  //     const highestCellCol = rowCells.findIndex((h) => h === maxRowHeight);
-  //     console.log("Columna con mayor altura:", highestCellCol);
-  //     console.log("Columna actual", colIndex);
-  //     // Log values for debugging
-  //     // console.log("Heights of cells in the row:", ...rowCells, cellHeight);
-  //     console.log("Maxheight:", maxRowHeight);
-  //     console.log("cellHeight", cellHeight);
-  //     // TODO:
-  //     // comprobar si la celda en la que se escribe
-  //     // es la que tiene mas texto y si es asi ajustar la altura
-  //     // de lo contrario no hacer nada
-  //     if (maxRowHeight <= cellHeight ||
-  //         (maxRowHeight > cellHeight && colIndex !== highestCellCol)
-  //     ) {
-  //       // Si el contenido cabe dentro del límite, ajusta la altura
-  //       // si se está escribiendo en la celda
-  //       updatedHeights[rowIndex] = maxRowHeight;
-  //     } else {
-  //       // Si el contenido excede el límite, fija la altura al máximo
-  //       // si se está borrando en la celda
-  //       updatedHeights[rowIndex] = cellHeight;
-  //     }
-  //     // updatedHeights[rowIndex] = maxRowHeight;
-  //     return updatedHeights;
-  //   });
-  // };
+  const cambiarNombreProyecto = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setNombreDeProyectoNuevo(event.target.value);
+
+    const text = event.target.value;
+    if (!text.trim()) {
+      setCambiosHechos(false);
+    } else {
+      setCambiosHechos(true);
+    }
+  };
 
   return (
     <Box
       sx={{
         display: "flex",
-        height: "100vh",
+        // height: "100vh",
         backgroundColor: themeStyles.background,
       }}
     >
       <Box sx={{ padding: "20px", flexGrow: 1 }}>
-        <div onBlur={(event) => handleMouseLeave(event)}>
+        <div onBlur={(event) => salidaMouse(event)}>
+          {/* Sección de comentarios */}
+          <Paper
+            style={{
+              padding: "16px",
+              marginBottom: "20px",
+              maxWidth: "1560px",
+              backgroundColor: "#c2edce",
+            }}
+          >
+            <h4 style={{ fontWeight: "400", marginBottom: "23px" }}>
+              Añadir comentarios
+            </h4>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <input
+                type="text"
+                value={comentarioParaAgregar}
+                onChange={(e) => setComentarioParaAgregar(e.target.value)}
+                placeholder="✏️ Agregar un comentario..."
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  paddingLeft: "15px",
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={agregarComentario}
+                sx={{ backgroundColor: "#a0caac", fontSize: "20px" }}
+              >
+                +
+              </Button>
+            </div>
+            <ul style={{ marginTop: "10px", paddingLeft: "0px" }}>
+              {[...comentarios].reverse().map((comment, index) => {
+                // Calculate the actual index in the original array for deletion
+                const indiceOriginal = comentarios.length - 1 - index;
+
+                return (
+                  <div
+                    key={indiceOriginal} // Use the original index as the key
+                    style={{
+                      backgroundColor: "#e8f5e9",
+                      borderRadius: "8px",
+                      padding: "15px",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                      marginBottom: "10px", // Add spacing between comments
+                    }}
+                  >
+                    <li
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        wordBreak: "break-word",
+                        overflow: "hidden",
+                        maxWidth: "100%",
+                        listStyle: "none", // Remove bullet points
+                      }}
+                    >
+                      <span
+                        style={{
+                          flex: 1,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {comment}
+                      </span>
+                      <Button
+                        onClick={() => eliminarComentario(indiceOriginal)}
+                        style={{
+                          color: "#d6676e",
+                          minWidth: "24px",
+                          width: "30px",
+                          height: "30px",
+                          padding: "4px",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <FaTrashAlt size={16} />
+                      </Button>
+                    </li>
+                  </div>
+                );
+              })}
+            </ul>
+          </Paper>
+          <h4 style={{ fontWeight: "400", marginBottom: "25px" }}>
+            Nombre del proyecto
+          </h4>
+          <TextField
+            label="Nombre..."
+            variant="outlined"
+            value={nombreDeProyectoNuevo}
+            onChange={cambiarNombreProyecto}
+            style={{
+              marginBottom: "20px",
+              backgroundColor: themeStyles.background,
+              borderColor: themeStyles.accent,
+            }}
+          />
           <TableContainer
             component={Paper}
             style={{
               backgroundColor: "#c2edce",
               width: "100%",
               height: "100%",
-              overflowX: data[0] && data[0].length > 12 ? "auto" : "hidden",
+              overflowX: datos[0] && datos[0].length > 12 ? "auto" : "hidden",
               overflowY: "auto",
               position: "relative", // Para el posicionamiento de los botones flotantes
               maxWidth: "1560px", // Ancho máximo basado en 12 columnas predeterminadas
@@ -506,94 +884,98 @@ const SubirPage: React.FC = () => {
                 tableLayout: "auto",
                 width: "100%",
                 minWidth:
-                  data[0] && data[0].length > 12
-                    ? `${data[0].length * 100}px`
+                  datos[0] && datos[0].length > 12
+                    ? `${datos[0].length * 100}px`
                     : "100%",
               }}
             >
               <TableBody>
-                {data.map((row, rowIndex) => (
-                  <TableRow key={rowIndex}>
-                    {row.map((cell, colIndex) => (
-                      <TableCell
-                        key={colIndex}
-                        style={{
-                          border: "none",
-                          padding: "2px",
-                          width: ancho[colIndex] || "100px",
-                        }}
-                        onFocus={() => handleMouseEnter(rowIndex, colIndex)}
-                      >
-                        <textarea
-                          value={cell}
-                          onChange={(e) =>
-                            handleCellChange(rowIndex, colIndex, e.target.value)
+                {datos.map((row, rowIndex) => {
+                  if (row[row.length - 1] !== "1") {
+                    return (
+                      <TableRow key={rowIndex} className="table-row">
+                        {row.map((cell, colIndex) => {
+                          if (colIndex < 12) {
+                            return (
+                              <TableCell
+                                key={colIndex}
+                                className="table-col"
+                                style={{
+                                  border: "none",
+                                  padding: "2px",
+                                  width: ancho[colIndex] || "100px",
+                                }}
+                                onFocus={() => ingresoMouse(rowIndex, colIndex)}
+                              >
+                                <textarea
+                                  value={cell}
+                                  onChange={(e) =>
+                                    actualizarCeldaEnCambio(
+                                      rowIndex,
+                                      colIndex,
+                                      e.target.value
+                                    )
+                                  }
+                                  onInput={(e) => {
+                                    const target =
+                                      e.target as HTMLTextAreaElement;
+                                    target.style.height = "auto";
+
+                                    const maxHeight = 600;
+                                    let assignedHeight = 0;
+                                    if (target.scrollHeight <= maxHeight) {
+                                      assignedHeight = target.scrollHeight;
+                                    } else {
+                                      assignedHeight = maxHeight;
+                                    }
+
+                                    const newHeight = ajustarAlturaFilas(
+                                      rowIndex,
+                                      colIndex,
+                                      assignedHeight
+                                    );
+
+                                    datos[rowIndex].forEach((_, idx) => {
+                                      const cell = document.querySelector(
+                                        `tr:nth-child(${
+                                          rowIndex + 1
+                                        }) td:nth-child(${idx + 1}) textarea`
+                                      ) as HTMLTextAreaElement;
+                                      if (cell) {
+                                        cell.style.height = `${newHeight}px`;
+                                      }
+                                    });
+                                  }}
+                                  style={{
+                                    borderRadius: "3px",
+                                    padding: "5px",
+                                    border: "none",
+                                    width: "100%",
+                                    resize: "none", // Disable manual resizing
+                                    overflowY: "auto", // Enable vertical scrolling
+                                    maxHeight: "600px", // Set maximum height
+                                    minHeight: "30px",
+                                    height: `${alturaFilas[rowIndex]}px`,
+                                  }}
+                                  disabled={rowIndex === 0 && colIndex < 12}
+                                />
+                              </TableCell>
+                            );
                           }
-                          onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            target.style.height = "auto";
-
-                            // const cellHeight = Math.min(target.scrollHeight, 100); // Limit to 300px
-                            // target.style.height = `${cellHeight}px`;
-                            //---------------------------------------------------------------------\\
-                            const maxHeight = 600;
-                            let asignedHeight = 0;
-                            console.log("scrollHeight:", target.scrollHeight);
-                            if (target.scrollHeight <= maxHeight) {
-                              // target.style.height = `${target.scrollHeight}px`;
-                              // opcion 2
-                              asignedHeight = target.scrollHeight;
-                            } else {
-                              // Si supera el máximo, limitamos la altura y permitimos el scrollbar
-                              // target.style.height = `${maxHeight}px`;
-                              // opcion 2
-                              asignedHeight = maxHeight;
-                            }
-
-                            // Imprimimos el scrollHeight en la consola
-
-                            let maxHeightFound = adjustRowHeight(
-                              rowIndex,
-                              colIndex,
-                              asignedHeight
-                            );
-                            target.style.height = `${maxHeightFound}px`;
-                            console.log(
-                              "altura asignada:",
-                              target.style.height
-                            );
-
-                            // adjustRowHeight(
-                            //   rowIndex,
-                            //   colIndex,
-                            //   target.scrollHeight
-                            // );
-                          }}
-                          style={{
-                            borderRadius: "3px",
-                            padding: "5px",
-                            border: "none",
-                            width: "100%",
-                            resize: "none", // Disable manual resizing
-                            overflowY: "auto", // Enable vertical scrolling
-                            maxHeight: "600px", // Set maximum height
-                            height: `${rowHeights[rowIndex]}px`, // Sync with row height
-                          }}
-                          disabled={rowIndex === 0 && colIndex < 12}
-                        />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
+                        })}
+                      </TableRow>
+                    );
+                  }
+                })}
               </TableBody>
             </Table>
           </TableContainer>
-          {hoveredCell && (
+          {celdaSeleccionada && (
             <div
               style={{
                 position: "absolute",
-                top: getTopPosition(hoveredCell[0], hoveredCell[1]),
-                left: "calc(100% - 400px)",
+                top: obtenerPosicionSuperior(celdaSeleccionada[0]),
+                left: obtenerPosicionIzq(celdaSeleccionada[1]),
                 transform: "translateY(-100%)",
                 display: "flex",
                 gap: "5px",
@@ -604,7 +986,7 @@ const SubirPage: React.FC = () => {
                 variant="contained"
                 color="primary"
                 size="small"
-                onClick={addRow}
+                onClick={agregarFila}
               >
                 +
               </Button>
@@ -612,10 +994,15 @@ const SubirPage: React.FC = () => {
                 variant="contained"
                 color="secondary"
                 size="small"
-                onClick={() => removeRow(hoveredCell[0], hoveredCell[1])}
+                onClick={() => {
+                  if (celdaSeleccionada) {
+                    eliminarFila(celdaSeleccionada[0]);
+                  }
+                }}
               >
                 -
               </Button>
+               
             </div>
           )}
           <div
@@ -625,20 +1012,101 @@ const SubirPage: React.FC = () => {
               width: "150px",
             }}
           >
-            <BstpButton
-              onClick={crearEstimacion}
-              style={{
-                width: "150px",
-                backgroundColor: themeStyles.cardBackground,
-                borderColor: themeStyles.accent,
-                color: themeStyles.text,
-              }}
+            <Tooltip
+              title={
+                modo === "crear" && !nombreDeProyectoNuevo.trim()
+                  ? "El nombre del proyecto no puede estar vacío"
+                  : "No hay cambios por guardar"
+              }
+              arrow
+              placement="top"
+              disableHoverListener={cambiosHechos} // Only show tooltip when disabled
+              disableFocusListener={cambiosHechos}
+              disableTouchListener={cambiosHechos}
             >
-              Crear estimacion
-            </BstpButton>
+              <span style={{ display: "block" }}>
+                {" "}
+                {/* Wrapper needed for disabled buttons */}
+                <BstpButton
+                  onClick={guardarCambios}
+                  style={{
+                    width: "150px",
+                    backgroundColor: themeStyles.buttonBackground,
+                    borderColor: themeStyles.accent,
+                    color: themeStyles.text,
+                    cursor: cambiosHechos ? "pointer" : "not-allowed",
+                    opacity: cambiosHechos ? 1 : 0.7,
+                  }}
+                  disabled={!cambiosHechos}
+                >
+                  Guardar
+                </BstpButton>
+              </span>
+            </Tooltip>
           </div>
         </div>
       </Box>
+      <Backdrop
+        sx={{
+          color: "#fff",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          flexDirection: "column",
+          gap: 2,
+        }}
+        open={cargando}
+      >
+        <CircularProgress color="inherit" />
+        <Typography variant="h6" component="div">
+          Cargando...
+        </Typography>
+      </Backdrop>
+      <Dialog
+        open={abrirPopup}
+        onClose={() => setAbrirPopup(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle
+          id="alert-dialog-title"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          {esExitoso ? (
+            <CheckCircleOutline sx={{ color: green[500], fontSize: 30 }} />
+          ) : (
+            <Cancel sx={{ color: red[500], fontSize: 30 }} />
+          )}
+          {esExitoso ? "¡Éxito!" : "¡Error!"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id="alert-dialog-description"
+            component="div" // Esto permite renderizar elementos HTML
+          >
+            {mensajePopup}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setAbrirPopup(false);
+              navigate("/");
+            }}
+            sx={{
+              color: "white",
+              backgroundColor: esExitoso ? green[500] : red[500],
+              "&:hover": {
+                backgroundColor: esExitoso ? green[700] : red[700],
+              },
+            }}
+          >
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

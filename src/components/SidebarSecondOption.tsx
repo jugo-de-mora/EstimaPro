@@ -1,120 +1,122 @@
 import { useState } from "react";
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
+} from "@mui/material";
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./CreateEstimationPopup.css";
 import "./SidebarTopbar.css";
 import { useNavigate } from "react-router-dom";
 import ReactDOM from "react-dom";
-import { FaHome, FaFileImport, FaPlus, FaBook, FaFileAlt } from "react-icons/fa";
+import {
+  FaHome,
+  FaFileImport,
+  FaPlus,
+  FaBook,
+} from "react-icons/fa";
+import { Cancel } from "@mui/icons-material";
+import { red } from "@mui/material/colors";
 
 interface SidebarSecondOptionProps {
-  isCollapsed: boolean;
-  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  estaColapsado: boolean;
+  setEstaColapsado: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
-const Topbar = () => {
-  return (
-    <header
-      style={{
-        backgroundColor: "#FFF",
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderColor: "#bfbfbf",
-        padding: "10px 20px",
-        textAlign: "center",
-        fontSize: "25px",
-        fontWeight: "600",
-        position: "fixed",
-        width: "100%",
-        top: 0,
-      }}
-    >
-      Crear nueva estimación
-    </header>
-  );
-};
 
 const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return ReactDOM.createPortal(children, document.body);
 };
 
 const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
-  isCollapsed,
-  setIsCollapsed,
+  estaColapsado,
+  setEstaColapsado,
 }) => {
-  const [isPopupOpen, setIsPopupOpen] = useState(false); // Estado para el pop-up
-  // const [isCollapsed, setIsCollapsed] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [csvContent, setCsvContent] = useState<string>("");
-  const navigate = useNavigate(); // Hook para la redirección
+  const [abrirPopup, setAbrirPopup] = useState(false);
+  const [abrirPopupError, setAbrirPopupError] = useState(false);
+  const [arrastrar, setArrastrar] = useState(false);
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [mensajeError, setMensajeError] = useState<string>("");
+  // const [csvContent, setCsvContent] = useState<string>("");
+  const navegar = useNavigate(); // Hook para la redirección
+  const ubicacion = useLocation(); // Obtener la ubicación actual
 
-  const openPopup = () => {
-    setIsPopupOpen(true);
+  const titulosRuta: { [key: string]: string } = {
+    "/": "Inicio",
+    "/seleccionar": "Seleccionar tipo de estimación",
+    "/crear": "Datos del proyecto",
+    "/manual": "Manual de usuario",
   };
 
-  const closePopup = () => {
-    setIsPopupOpen(false);
-    setFile(null); // Resetea archivo si se cancela
+  const cerrarPopup = () => {
+    setAbrirPopup(false);
+    setArchivo(null); // Resetea archivo si se cancela
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const arrastrarArchivo = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setDragOver(true);
+    setArrastrar(true);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const soltarArchivo = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    setFile(droppedFile);
+    setArrastrar(false);
+    const archivoSoltado = e.dataTransfer.files[0];
+    setArchivo(archivoSoltado);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const cambiarArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFile(e.target.files[0]);
+      setArchivo(e.target.files[0]);
     }
   };
 
-  const handleAddFile = () => {
-    const allowedExtensions = ["csv"];
-    const fileExtension = file?.name?.split(".").pop()?.toLowerCase();
+  const añadirArchivo = () => {
+    const extensionesPermitidas = ["csv"];
+    const extension = archivo?.name?.split(".").pop()?.toLowerCase();
 
     // Verificar si la extensión está permitida
-    if (fileExtension && allowedExtensions.includes(fileExtension)) {
-      console.log("Archivo agregado:", file?.name);
-      const reader = new FileReader();
+    if (extension && extensionesPermitidas.includes(extension)) {
+      console.log("Archivo agregado:", archivo?.name);
+      const lector = new FileReader();
 
       // Leer el archivo y procesarlo
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        setCsvContent(text);
-        console.log("Contenido del archivo CSV:", text); // Mostrar contenido en consola
-        navigate("/crear", { state: { csvData: text } });
+      lector.onload = (event) => {
+        const csvData = event.target?.result as string;
+        // setCsvContent(text);
+        console.log("Contenido del archivo CSV:", csvData);
+        // Get file name without extension
+        const nombreProyecto = archivo?.name.split(".").slice(0, -1).join(".");
+        navegar("/crear", {
+          state: { csvData: csvData, nombreProyecto: nombreProyecto, modo: "crear" },
+        });
       };
 
-      reader.onerror = () => {
-        console.error("Hubo un error al leer el archivo.");
-      };
+      // lector.onerror = () => {
+      //   console.error("Hubo un error al leer el archivo.");
+      // };
 
-      if (file) {
-        reader.readAsText(file); // Leer el archivo como texto
+      if (archivo) {
+        lector.readAsText(archivo); // Leer el archivo como texto
       }
-      setErrorMessage(""); // Limpiar mensajes de error
+      setMensajeError(""); // Limpiar mensajes de error
     } else {
-      setFile(null); // Limpiar archivo
-      setErrorMessage(
-        `Extensión no permitida. Solo se aceptan: ${allowedExtensions.join(
+      setArchivo(null); // Limpiar archivo
+      setMensajeError(
+        `Extensión no permitida. Solo se aceptan: ${extensionesPermitidas.join(
           ", "
         )}`
       );
+      setAbrirPopupError(true);
     }
-    closePopup();
+    cerrarPopup();
   };
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+  const activarBarraLateral = () => {
+    setEstaColapsado(!estaColapsado);
   };
 
   return (
@@ -124,17 +126,21 @@ const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
     >
       <Portal>
         {/* <div className="content-container"> */}
-          <header className={`topbar-container ${isCollapsed ? "collapsed" : ""}`}>
-            <div className="menu-icon" onClick={toggleSidebar}>
-              ☰
-            </div>
-            <span style={{paddingLeft: "50px"}}>Crear nueva estimación</span>
-          </header>
+        <header
+          className={`topbar-container ${estaColapsado ? "collapsed" : ""}`}
+        >
+          <div className="menu-icon" onClick={activarBarraLateral}>
+            ☰
+          </div>
+          <span style={{ paddingLeft: "50px" }}>
+            {titulosRuta[ubicacion.pathname] || "Crear nueva estimación"}
+          </span>
+        </header>
         {/* </div> */}
       </Portal>
 
       <Sidebar
-        collapsed={isCollapsed}
+        collapsed={estaColapsado}
         // crea su propio contexto de apilamiento
         style={{
           position: "fixed",
@@ -144,7 +150,7 @@ const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
           // ajustar posible tema oscuro
           backgroundColor: "#fff",
         }}
-        backgroundColor={"#fff"}
+        backgroundColor={"#dcf6e4"}
       >
         <div
           style={{
@@ -156,26 +162,47 @@ const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
           SEED E.M
         </div>
         {/* <div style={{ padding: "0 24px", marginBottom: "8px" }}>General</div> */}
-        <Menu menuItemStyles={{ button: { [`&.active`]: { backgroundColor: "#A7DCC6" } } }}>
-          <MenuItem icon={<FaFileImport />} onClick={openPopup}>+ Importar</MenuItem>
-          <MenuItem icon={<FaHome />} component={<Link to="/" />}>Inicio</MenuItem>
-          <MenuItem icon={<FaPlus />} component={<Link to="/seleccionar" />}>Nuevo</MenuItem>
-          <MenuItem icon={<FaFileAlt />} component={<Link to="/crear" />}>Crear</MenuItem>
-          <MenuItem icon={<FaBook />} component={<Link to="/manual" />}>Manual</MenuItem>
+        <Menu
+          menuItemStyles={{
+            button: {
+              [`&.active`]: {
+                backgroundColor: "#A7DCC6",
+              },
+              "&:hover": {
+                backgroundColor: "#b4e3c2", // Add hover effect with the specified color
+              },
+            },
+          }}
+        >
+          <MenuItem icon={<FaFileImport />} onClick={() => setAbrirPopup(true)}>
+            Importar
+          </MenuItem>
+          <MenuItem icon={<FaHome />} component={<Link to="/" />}>
+            Inicio
+          </MenuItem>
+          <MenuItem icon={<FaPlus />} component={<Link to="/seleccionar" />}>
+            Nuevo
+          </MenuItem>
+          {/* <MenuItem icon={<FaFileAlt />} component={<Link to="/crear" />}>
+            Crear
+          </MenuItem> */}
+          <MenuItem icon={<FaBook />} component={<Link to="/manual" />}>
+            Manual
+          </MenuItem>
         </Menu>
-        {isPopupOpen && (
+        {abrirPopup && (
           <Portal>
             <div className="popup">
               <div className="popup-content">
                 <h2>Arrastra un archivo aquí</h2>
                 <div
-                  className={`dropzone ${dragOver ? "drag-over" : ""}`}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
+                  className={`dropzone ${arrastrar ? "drag-over" : ""}`}
+                  onDragOver={arrastrarArchivo}
+                  onDrop={soltarArchivo}
                   onClick={() => document.getElementById("file-input")?.click()}
                 >
-                  {file ? (
-                    <p>Archivo seleccionado: {file.name}</p>
+                  {archivo ? (
+                    <p>Archivo seleccionado: {archivo.name}</p>
                   ) : (
                     <p>
                       Arrastra y suelta un archivo aquí, o haz clic para
@@ -185,25 +212,60 @@ const SidebarSecondOption: React.FC<SidebarSecondOptionProps> = ({
                   <input
                     type="file"
                     accept=".csv"
-                    onChange={handleFileChange}
+                    onChange={cambiarArchivo}
                     style={{ display: "none" }}
                     id="file-input"
                   />
                 </div>
                 <div className="popup-buttons">
-                  <button onClick={handleAddFile}>Agregar</button>
-                  <button onClick={closePopup}>Cancelar</button>
+                  <button onClick={añadirArchivo}>Agregar</button>
+                  <button onClick={cerrarPopup}>Cancelar</button>
                 </div>
               </div>
             </div>
           </Portal>
         )}
-        {errorMessage && (
-          <p className="popup" style={{ color: "red" }}>
-            {errorMessage}
-          </p>
-        )}
       </Sidebar>
+      <Dialog
+        open={abrirPopupError}
+        onClose={() => setAbrirPopupError(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle
+          id="alert-dialog-title"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <Cancel sx={{ color: red[500], fontSize: 30 }} />
+          ¡Error!
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id="alert-dialog-description"
+            component="div" // Esto permite renderizar elementos HTML
+          >
+            {mensajeError}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setAbrirPopupError(false)}
+            sx={{
+              color: "white",
+              backgroundColor: red[500],
+              "&:hover": {
+                backgroundColor: red[700],
+              },
+            }}
+          >
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

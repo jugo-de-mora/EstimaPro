@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Box, TextField } from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Accordion, Card, Form, Button as ButtonB } from "react-bootstrap";
-import { fetchNeo4jData } from "../services/neo4jService";
+import { obtenerEstimaciones } from "../services/neo4jService";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,158 +11,159 @@ interface Neo4jNode {
   [key: string]: any;
 }
 
-function HomePage() {
-  const [data, setData] = useState<Neo4jNode[] | null>();
-  const [projectName, setProjectName] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
-  const navigate = useNavigate(); // Hook para la redirección
-  const [selectedCards, setSelectedCards] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+function SelectionPage() {
+  const [datos, setDatos] = useState<Neo4jNode[] | null>();
+  const [nombreProyecto, setNombreProyecto] = useState<string>("");
+  const [cargando, setCargando] = useState<boolean>(true);
+  const navegar = useNavigate(); // Hook para la redirección
+  const [itemsSeleccionados, setItemsSeleccionados] = useState<string[]>([]);
+  const [termBusqueda, setTermBusqueda] = useState<string>(""); // Estado para la búsqueda
+  const datosFiltrados = datos
+    ?.map((section) => ({
+      categoria: section.categoria, // Explicitly include categoria
+      ...section,
+      nodos: section.nodos.filter((nodo) => {
+        const termBusquedaMinusculas = termBusqueda.toLowerCase();
+        return (
+          // Search in historia_de_usuario
+          nodo?.nodo.historia_de_usuario
+            ?.toLowerCase()
+            .includes(termBusquedaMinusculas) ||
+          // Search in criterio_aceptacion
+          nodo?.nodo.criterio_aceptacion
+            ?.toLowerCase()
+            .includes(termBusquedaMinusculas) ||
+          // Search in categoria
+          section.categoria.toLowerCase().includes(termBusquedaMinusculas)
+        );
+      }),
+    }))
+    .filter((section) => section.nodos.length > 0);
 
   useEffect(() => {
-    const getData = async () => {
+    const obtenerDatos = async () => {
       try {
-        const neo4jData = await fetchNeo4jData();
-        setData(neo4jData);
+        const neo4jData = await obtenerEstimaciones();
+        setDatos(neo4jData);
         console.log("Neo4j data:", neo4jData);
       } catch (error) {
         console.error("Error loading Neo4j data:", error);
       } finally {
-        setLoading(false);
+        setCargando(false);
       }
     };
 
-    getData();
+    obtenerDatos();
   }, []);
 
-  const handleTextFieldChange = (value: string) => {
-    setProjectName(value);
+  const cambiarNombreProyecto = (value: string) => {
+    setNombreProyecto(value);
     localStorage.setItem("projectName", value);
   };
 
-  // useEffect(() => {
-  //   if (data) {
-  //     console.log("Neo4j data:", data);
-  //     console.log("Categoría:", data[0].categoria);
-  //   }
-  // }, [data]);
-
-  //   if (loading) {
-  //     return <p>Loading...</p>;
-  //   }
-
-  useEffect(() => {
-    console.log(selectedCards);
-  }, [selectedCards]);
-
-  const handleCheckboxChange = (cardKey: string) => {
-    setSelectedItems(prevItems =>
+  const seleccionarCheckbox = (cardKey: string) => {
+    setItemsSeleccionados((prevItems) =>
       prevItems.includes(cardKey)
-        ? prevItems.filter(item => item !== cardKey)
+        ? prevItems.filter((item) => item !== cardKey)
         : [...prevItems, cardKey]
     );
   };
 
-  const handleAccept = () => {
+  const aceptar = () => {
     let jsonData: string[] = [];
 
-    if (selectedItems.length > 0) {
-      selectedItems.forEach((item) => {
-        if (data) {
-          jsonData.push(
-            JSON.stringify(data[parseInt(item[0])].nodos[parseInt(item[2])])
-          );
+    if (itemsSeleccionados.length > 0) {
+      itemsSeleccionados.forEach((item) => {
+        if (datos) {
+          datos.forEach((categoria) => {
+            categoria.nodos.forEach((nodo) => {
+              if (nodo.id === item) {
+                jsonData.push(JSON.stringify(nodo.nodo));
+              }
+            });
+          });
         }
       });
     }
 
-    navigate("/crear", {
-      state: { projectName: projectName, jsonData: jsonData },
+    navegar("/crear", {
+      state: {
+        nombreProyecto: nombreProyecto,
+        jsonData: jsonData,
+        modo: "crear",
+      },
     });
   };
 
   // Tema de colores
-  const themeStyles = {
-    primary: "#A7DCC6", // Verde menta pastel
-    secondary: "#F6EBD9", // Beige suave
-    accent: "#CFEAD8", // Marrón claro
-    background: "#FFFFFF", // Blanco
-    text: "#374151", // Gris oscuro
-    cardBackground: "#CFEAD8", // Verde claro
+  const estilos = {
+    primario: "#A7DCC6", // Verde menta pastel
+    secundario: "#F6EBD9", // Beige suave
+    acento: "#CFEAD8", // Marrón claro
+    fondo: "#FFFFFF", // Blanco
+    texto: "#374151", // Gris oscuro
+    fondoTarjeta: "#CFEAD8", // Verde claro
+    fondoBoton: "#C2EDCE", // Verde claro
   };
 
   return (
     <Box
       sx={{
         display: "flex",
-        height: "100vh",
-        backgroundColor: themeStyles.background,
+        backgroundColor: estilos.fondo,
       }}
     >
       <Box sx={{ padding: "20px", flexGrow: 1 }}>
-        {/* Placeholder de buscar */}
         <TextField
-          label="Buscar historias de usuario"
+          label="🔎 Buscar..."
           variant="outlined"
           fullWidth
+          value={termBusqueda}
+          onChange={(e) => setTermBusqueda(e.target.value)}
           style={{
             marginBottom: "20px",
-            backgroundColor: themeStyles.background,
-            borderColor: themeStyles.accent,
+            backgroundColor: estilos.fondo,
+            borderColor: estilos.acento,
           }}
         />
+        <hr />
         <h4 style={{ fontWeight: "400", marginBottom: "25px" }}>
-          Nombre del proyecto:
+          Nombre del proyecto
         </h4>
         <TextField
           label="Nombre..."
           variant="outlined"
           style={{
             marginBottom: "20px",
-            backgroundColor: themeStyles.background,
-            borderColor: themeStyles.accent,
+            backgroundColor: estilos.fondo,
+            borderColor: estilos.acento,
           }}
-          onChange={(event) => handleTextFieldChange(event.target.value)}
+          onChange={(event) => cambiarNombreProyecto(event.target.value)}
         />
+        <hr />
         <div>
           <Accordion defaultActiveKey="0">
             {/* Sección 1 */}
-            {data?.map((item, index_section) => (
-              <Accordion.Item eventKey={index_section.toString()}>
-                <Accordion.Header
-                  style={{ backgroundColor: themeStyles.primary }}
-                >
-                  {data && data?.length > 0 ? (
-                    <p style={{ marginBottom: "0px" }}>{item.categoria}</p>
-                  ) : (
-                    <p style={{ marginBottom: "0px" }}>
-                      No hay datos disponibles
-                    </p>
-                  )}
+            {datosFiltrados?.map((item, index_section) => (
+              <Accordion.Item eventKey={index_section.toString()} key={index_section.toString()}>
+                <Accordion.Header style={{ backgroundColor: estilos.primario }}>
+                  {item?.categoria || "No hay datos disponibles"}
                 </Accordion.Header>
                 <Accordion.Body>
                   {item.nodos?.map((item_nodo, index_nodo) => (
                     <Card
-                      key={`sec${index_section}-${index_nodo}`}
+                      key={item_nodo.id}
                       className="mb-3"
                       style={{
-                        backgroundColor: themeStyles.cardBackground,
-                        borderColor: themeStyles.accent,
+                        backgroundColor: estilos.fondoTarjeta,
+                        borderColor: estilos.acento,
                       }}
                     >
                       <Card.Body>
                         <Form.Check
                           type="checkbox"
-                          checked={
-                            selectedItems.includes(`${index_section}-${index_nodo}`)
-                          }
-                          onChange={() =>
-                            handleCheckboxChange(
-                              `${index_section}-${index_nodo}`
-                            )
-                          }
+                          checked={itemsSeleccionados.includes(item_nodo.id)}
+                          onChange={() => seleccionarCheckbox(item_nodo.id)}
                           style={{
                             display: "inline-block",
                             marginRight: "10px",
@@ -170,13 +171,13 @@ function HomePage() {
                         />
                         <Card.Title
                           style={{
-                            color: themeStyles.text,
+                            color: estilos.texto,
                             display: "inline-block",
                           }}
                         >
-                          {data && data?.length > 0 ? (
+                          {datos && datos?.length > 0 ? (
                             <p style={{ marginBottom: "0px" }}>
-                              {item_nodo.historia_de_usuario}
+                              {item_nodo.nodo.historia_de_usuario}
                             </p>
                           ) : (
                             <p style={{ marginBottom: "0px" }}>
@@ -184,16 +185,10 @@ function HomePage() {
                             </p>
                           )}
                         </Card.Title>
-                        <Card.Text style={{ color: themeStyles.text }}>
-                          {data && data?.length > 0 ? (
-                            <p style={{ marginBottom: "0px" }}>
-                              {item_nodo.criterio_aceptacion}
-                            </p>
-                          ) : (
-                            <p style={{ marginBottom: "0px" }}>
-                              No hay datos disponibles
-                            </p>
-                          )}
+                        <Card.Text style={{ color: estilos.texto }}>
+                          {datos && datos?.length > 0
+                            ? item_nodo.nodo.criterio_aceptacion
+                            : "No hay datos disponibles"}
                         </Card.Text>
                       </Card.Body>
                     </Card>
@@ -212,12 +207,14 @@ function HomePage() {
           >
             <ButtonB
               style={{
-                backgroundColor: themeStyles.cardBackground,
-                borderColor: themeStyles.accent,
-                color: themeStyles.text,
+                backgroundColor: estilos.fondoBoton,
+                borderColor: estilos.acento,
+                color: estilos.texto,
               }}
-              onClick={handleAccept}
-              disabled={projectName === "" || selectedItems.length === 0}
+              onClick={aceptar}
+              disabled={
+                nombreProyecto === "" || itemsSeleccionados.length === 0
+              }
             >
               Aceptar
             </ButtonB>
@@ -228,4 +225,4 @@ function HomePage() {
   );
 }
 
-export default HomePage;
+export default SelectionPage;
